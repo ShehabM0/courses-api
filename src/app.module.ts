@@ -1,4 +1,5 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { UserModule } from './users/user.module';
 import { AppController } from './app.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppService } from './app.service';
@@ -19,6 +20,8 @@ import { Module } from '@nestjs/common';
         synchronize: process.env.NODE_ENV === 'DEV',
       }),
     }),
+
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],
