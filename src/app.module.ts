@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppService } from './app.service';
 import { User } from './users/user.entity';
 import { Module } from '@nestjs/common';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -17,11 +18,12 @@ import { Module } from '@nestjs/common';
         url: config.get<string>('DATABASE_URL'),
         ssl: true,
         entities: [User],
-        synchronize: process.env.NODE_ENV === 'DEV',
+        synchronize: config.get<string>('NODE_ENV') === 'DEV',
       }),
     }),
 
     UserModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

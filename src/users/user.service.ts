@@ -1,8 +1,8 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { CreateUserDTO, UpdateUserDTO } from "./user.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { DeleteResult } from "typeorm/browser";
 import { User, UserDAO } from "./user.entity";
+import { UpdateUserDTO } from "./user.dto";
 import { Repository } from "typeorm";
 import * as bcrypt from "bcrypt";
 
@@ -10,7 +10,7 @@ import * as bcrypt from "bcrypt";
 export class UserService {
   constructor(@InjectRepository(User) private readonly userRepository: Repository<User>) {}
   
-  async create(user: CreateUserDTO): Promise<UserDAO> {
+  async create(user: User): Promise<UserDAO> {
     const findUser: boolean = await this.userRepository.existsBy({ email: user.email });
     if(findUser)
       throw new ConflictException('Email already exists');
@@ -35,8 +35,17 @@ export class UserService {
     return usersExec;
   }
 
-  async find(id: string): Promise<UserDAO> {
+  async findById(id: string): Promise<UserDAO> {
     const user: User | null = await this.userRepository.findOneBy({ id });
+    if(!user)
+      throw new NotFoundException('User not found!');
+
+    const { password, ...fields } = user;
+    return fields;
+  }
+
+  async findByEmail(email: string): Promise<UserDAO> {
+    const user: User | null = await this.userRepository.findOneBy({ email });
     if(!user)
       throw new NotFoundException('User not found!');
 
@@ -66,5 +75,13 @@ export class UserService {
 
     const del: DeleteResult = await this.userRepository.delete(user.id);
     return { deleted: del.affected === 1 };
+  }
+
+  async verifyPass(id: string, pass: string): Promise<boolean> {
+    const user: User | null = await this.userRepository.findOneBy({ id });
+    if(!user)
+      throw new NotFoundException('User not found!');
+
+    return await bcrypt.compare(pass, user.password);
   }
 }
