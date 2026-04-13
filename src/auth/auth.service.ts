@@ -1,6 +1,8 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { User, UserDAO } from 'src/users/user.entity';
+import { LoggedUser, SafeUser } from 'src/users/user.interface'
 import { UserService } from '../users/user.service';
+import { User} from 'src/users/user.entity';
+import { Tokens } from './auth.interface';
 import { JwtService } from '@nestjs/jwt';
 import { SignUpDTO } from "./auth.dto";
 import type { StringValue } from "ms";
@@ -13,32 +15,28 @@ export class AuthService {
     private jwtService: JwtService
   ) {}
 
-  async signUp(user: SignUpDTO): Promise<UserDAO> {
+  async signUp(user: SignUpDTO): Promise<SafeUser> {
     const newUser: User = new User();
     Object.assign(newUser, user);
     newUser.password = await bcrypt.hash(user.password, 10);
 
-    const createdUser: UserDAO = await this.userService.create(newUser);
+    const createdUser: SafeUser = await this.userService.create(newUser);
     return createdUser;
   }
 
-  async signIn(email: string, pass: string): Promise<{ 
-    access_token: string, refresh_token: string
-  }> {
+  async signIn(email: string, pass: string): Promise<LoggedUser> {
     // throws if not exists
-    const user: UserDAO = await this.userService.findByEmail(email);
+    const user: SafeUser = await this.userService.findByEmail(email);
     const verify: boolean = await this.userService.verifyPass(user.id, pass);
     if(!verify)
       throw new UnauthorizedException();
 
-    const tokens = await this.generateTokens(user);
+    const tokens: Tokens = await this.generateTokens(user);
 
-    return { access_token: tokens.accessToken, refresh_token: tokens.refreshToken };
+    return { ...user, ...tokens };
   }
 
-  async generateTokens(user: UserDAO): Promise<{ 
-    accessToken: string, refreshToken: string
-  }> {
+  async generateTokens(user: SafeUser): Promise<Tokens> {
     const payload = { sub: user.id, email: user.email };
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: process.env.JWT_ACCESS_TOKEN! as StringValue,

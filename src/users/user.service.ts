@@ -1,16 +1,17 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { DeleteResult } from "typeorm/browser";
-import { User, UserDAO } from "./user.entity";
+import { SafeUser } from "./user.interface";
 import { UpdateUserDTO } from "./user.dto";
 import { Repository } from "typeorm";
+import { User } from "./user.entity";
 import * as bcrypt from "bcrypt";
 
 @Injectable()
 export class UserService {
   constructor(@InjectRepository(User) private readonly userRepository: Repository<User>) {}
   
-  async create(user: User): Promise<UserDAO> {
+  async create(user: User): Promise<SafeUser> {
     const findUser: boolean = await this.userRepository.existsBy({ email: user.email });
     if(findUser)
       throw new ConflictException('Email already exists');
@@ -25,9 +26,9 @@ export class UserService {
     return fields;
   }
 
-  async findAll(): Promise<UserDAO[]> {
+  async findAll(): Promise<SafeUser[]> {
     const users: User[] = await this.userRepository.find();
-    const usersExec: UserDAO[] = [];
+    const usersExec: SafeUser[] = [];
     for(let user of users) {
       const { password, ...fields } = user;
       usersExec.push(fields);
@@ -35,7 +36,7 @@ export class UserService {
     return usersExec;
   }
 
-  async findById(id: string): Promise<UserDAO> {
+  async findById(id: string): Promise<SafeUser> {
     const user: User | null = await this.userRepository.findOneBy({ id });
     if(!user)
       throw new NotFoundException('User not found!');
@@ -44,7 +45,7 @@ export class UserService {
     return fields;
   }
 
-  async findByEmail(email: string): Promise<UserDAO> {
+  async findByEmail(email: string): Promise<SafeUser> {
     const user: User | null = await this.userRepository.findOneBy({ email });
     if(!user)
       throw new NotFoundException('User not found!');
@@ -53,7 +54,7 @@ export class UserService {
     return fields;
   }
 
-  async update(id: string, user: UpdateUserDTO): Promise<UserDAO> {
+  async update(id: string, user: UpdateUserDTO): Promise<SafeUser> {
     const findUser: User | null = await this.userRepository.findOneBy({ id });
     if(!findUser) 
       throw new NotFoundException('User not found!');

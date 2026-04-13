@@ -38,13 +38,3 @@ export class User {
   @UpdateDateColumn()
   updatedAt!: Date;
 }
-
-export interface UserDAO {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  isVerified: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
