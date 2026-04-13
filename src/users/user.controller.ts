@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Request, UseGuards } from "@nestjs/common";
+import { AuthGuard } from '../auth/auth.guard';
 import { UserService } from "./user.service";
 import { UpdateUserDTO } from "./user.dto";
 
@@ -6,23 +7,35 @@ import { UpdateUserDTO } from "./user.dto";
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @UseGuards(AuthGuard)
+  @Get('profile')
+  getProfile(@Request() req) {
+    const id: string = req.user.id;
+    return this.userService.findById(id);
+  }
+
+  // ---- TODO: Admin RoleGuard ----
   @Get()
   findAll() {
     return this.userService.findAll();
   }
-
   @Get(':id')
   findById(@Param('id') id: string) {
     return this.userService.findById(id);
   }
+  // -------------------------------
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDTO: UpdateUserDTO) {
+  @UseGuards(AuthGuard)
+  @Patch()
+  update(@Request() req, @Body() updateUserDTO: UpdateUserDTO) {
+    const id: string = req.user.id;
     return this.userService.update(id, updateUserDTO);
   }
 
-  @Delete(':id')
-  delete(@Param('id') id: string) {
+  @UseGuards(AuthGuard)
+  @Delete()
+  delete(@Request() req) {
+    const id: string = req.user.id;
     return this.userService.delete(id);
   }
 }

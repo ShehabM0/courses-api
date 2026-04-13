@@ -11,11 +11,12 @@ import type { StringValue } from "ms";
     UserModule,
 
     JwtModule.registerAsync({
+      global: true,
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get<StringValue>('JWT_SECRET_TOKEN')!,
+        secret: config.get<StringValue>('JWT_ACCESS_TOKEN')!,
         signOptions: {
-          expiresIn: config.get<StringValue>('JWT_SECRET_TOKEN_EXP_TIME')!,
+          expiresIn: config.get<StringValue>('JWT_ACCESS_TOKEN_EXP_TIME')!,
         },
       }),
     }),

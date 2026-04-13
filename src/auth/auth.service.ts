@@ -29,7 +29,7 @@ export class AuthService {
     const user: SafeUser = await this.userService.findByEmail(email);
     const verify: boolean = await this.userService.verifyPass(user.id, pass);
     if(!verify)
-      throw new UnauthorizedException();
+      throw new UnauthorizedException("That email and password combination didn't work!");
 
     const tokens: Tokens = await this.generateTokens(user);
 
@@ -37,7 +37,7 @@ export class AuthService {
   }
 
   async generateTokens(user: SafeUser): Promise<Tokens> {
-    const payload = { sub: user.id, email: user.email };
+    const payload = { id: user.id, email: user.email };
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: process.env.JWT_ACCESS_TOKEN! as StringValue,
       expiresIn: process.env.JWT_ACCESS_TOKEN_EXP_TIME! as StringValue,
