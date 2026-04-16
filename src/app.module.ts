@@ -1,4 +1,6 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { redisStore } from 'cache-manager-ioredis-yet';
+import { CacheModule } from '@nestjs/cache-manager';
 import { UserModule } from './users/user.module';
 import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -17,6 +19,16 @@ import { Module } from '@nestjs/common';
         ssl: true,
         entities: [User],
         synchronize: config.get<string>('NODE_ENV') === 'DEV',
+      }),
+    }),
+
+    CacheModule.registerAsync({
+      isGlobal: true,
+      inject: [ConfigService],
+      useFactory: async (config: ConfigService) => ({
+        store: await redisStore({
+          url: config.get<string>('REDIS_URL'),
+        }),
       }),
     }),
 

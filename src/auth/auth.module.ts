@@ -1,5 +1,6 @@
 import { AuthController } from './auth.controller';
 import { UserModule } from '../users/user.module';
+import { JwtAuthGuard } from './jwtauth.guard';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { Module } from '@nestjs/common';
@@ -21,8 +22,8 @@ import type { StringValue } from "ms";
       }),
     }),
   ],
-  providers: [AuthService],
+  providers: [AuthService, JwtAuthGuard],
   controllers: [AuthController],
-  exports: [AuthService],
+  exports: [AuthService, JwtAuthGuard],
 })
 export class AuthModule {}

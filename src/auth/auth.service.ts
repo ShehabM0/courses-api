@@ -1,7 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { LoggedUser, SafeUser } from 'src/users/user.interface'
+import { Inject, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
+import { LoggedUser, SafeUser } from 'src/users/user.interface';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { UserService } from '../users/user.service';
 import { User} from 'src/users/user.entity';
+import type { Cache } from 'cache-manager';
 import { Tokens } from './auth.interface';
 import { JwtService } from '@nestjs/jwt';
 import { SignUpDTO } from "./auth.dto";
@@ -11,6 +13,7 @@ import * as bcrypt from "bcrypt";
 @Injectable()
 export class AuthService {
   constructor(
+    @Inject(CACHE_MANAGER) private readonly redisClient: Cache,
     private userService: UserService,
     private jwtService: JwtService
   ) {}
@@ -36,6 +39,11 @@ export class AuthService {
     return { ...user, ...tokens };
   }
 
+  async logout(accessToken: string): Promise<boolean> {
+    await this.revokeAccessToken(accessToken);
+    return true;
+  }
+
   async generateTokens(user: SafeUser): Promise<Tokens> {
     const payload = { id: user.id, email: user.email };
     const accessToken = await this.jwtService.signAsync(payload, {
@@ -47,5 +55,22 @@ export class AuthService {
       expiresIn: process.env.JWT_REFRESH_TOKEN_EXP_TIME! as StringValue,
     });
     return { accessToken, refreshToken };
+  }
+
+  async revokeAccessToken(accessToken: string): Promise<void> {
+    try {
+      await this.redisClient.set(accessToken, 'revoked', 3600 );
+    } catch ( err: unknown ) {
+      throw new UnprocessableEntityException( 'Error revoking access token' );
+    }
+  }
+
+   async isAccessTokenRevoked(accessToken: string): Promise<boolean> {
+    try {
+      const result: string | undefined = await this.redisClient.get(accessToken);
+      return result === 'revoked';
+    } catch ( err: unknown ) {
+      throw new UnprocessableEntityException( 'Error checking token revocation' );
+    }
   }
 }
