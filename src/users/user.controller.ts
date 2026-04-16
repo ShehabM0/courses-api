@@ -1,8 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Query, Request, UseGuards } from "@nestjs/common";
-import { AuthGuard } from '../auth/auth.guard';
+import { PaginationDTO } from "src/common/pagination.dto";
+import { AuthGuard } from "src/auth/auth.guard";
 import { UserService } from "./user.service";
 import { UpdateUserDTO } from "./user.dto";
-import { PaginationDTO } from "src/common/pagination.dto";
 
 @Controller('user')
 export class UserController {

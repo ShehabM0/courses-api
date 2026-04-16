@@ -1,15 +1,15 @@
+import { forwardRef, Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { UserModule } from '../users/user.module';
-import { JwtAuthGuard } from './jwtauth.guard';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
-import { Module } from '@nestjs/common';
+import { AuthGuard } from './auth.guard';
 import { JwtModule } from '@nestjs/jwt';
 import type { StringValue } from "ms";
 
 @Module({
   imports: [
-    UserModule,
+    forwardRef(() => UserModule), // Wrap with forwardRef
 
     JwtModule.registerAsync({
       global: true,
@@ -22,8 +22,8 @@ import type { StringValue } from "ms";
       }),
     }),
   ],
-  providers: [AuthService, JwtAuthGuard],
+  providers: [AuthService, AuthGuard],
   controllers: [AuthController],
-  exports: [AuthService, JwtAuthGuard],
+  exports: [AuthService, AuthGuard],
 })
 export class AuthModule {}

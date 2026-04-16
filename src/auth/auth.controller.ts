@@ -22,7 +22,7 @@ export class AuthController {
   @UseGuards(AuthGuard)
   @Post('logout')
   async logout(@Request() req) {
-      const accessToken = req.headers.authorization?.split(' ')[1];
-      return this.authService.logout(accessToken);
+    const accessToken = req.headers.authorization?.split(' ')[1];
+    return this.authService.logout(accessToken);
   }
 }

@@ -39,9 +39,9 @@ export class AuthService {
     return { ...user, ...tokens };
   }
 
-  async logout(accessToken: string): Promise<boolean> {
+  async logout(accessToken: string): Promise<{message: string}> {
     await this.revokeAccessToken(accessToken);
-    return true;
+    return { message: "Logged out successfully" };
   }
 
   async generateTokens(user: SafeUser): Promise<Tokens> {
@@ -59,13 +59,18 @@ export class AuthService {
 
   async revokeAccessToken(accessToken: string): Promise<void> {
     try {
-      await this.redisClient.set(accessToken, 'revoked', 3600 );
+      await this.redisClient.set(
+        accessToken,
+        'revoked',
+        parseInt(process.env.JWT_SECRET_TOKEN_EXP_TIME || '1', 10)
+        * 86400
+      );
     } catch ( err: unknown ) {
       throw new UnprocessableEntityException( 'Error revoking access token' );
     }
   }
 
-   async isAccessTokenRevoked(accessToken: string): Promise<boolean> {
+  async isAccessTokenRevoked(accessToken: string): Promise<boolean> {
     try {
       const result: string | undefined = await this.redisClient.get(accessToken);
       return result === 'revoked';
