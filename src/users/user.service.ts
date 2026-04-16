@@ -1,4 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { PaginatedResult } from "src/common/pagination.interface";
+import { PaginationDTO } from "src/common/pagination.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { DeleteResult } from "typeorm/browser";
 import { SafeUser } from "./user.interface";
@@ -26,14 +28,34 @@ export class UserService {
     return fields;
   }
 
-  async findAll(): Promise<SafeUser[]> {
-    const users: User[] = await this.userRepository.find();
-    const usersExec: SafeUser[] = [];
+  async findAll(paginationDTO: PaginationDTO): Promise<PaginatedResult<SafeUser>> {
+    const total: number = await this.userRepository.count();
+    const offset = paginationDTO.offset ?? 0, limit = paginationDTO.limit ?? total;
+
+    const from = offset
+    const to = Math.min(from + limit, total)
+
+    const [users] = await this.userRepository.findAndCount({
+      take: limit,
+      skip: offset,
+    });
+
+    const safeUsers: SafeUser[] = [];
     for(let user of users) {
       const { password, ...fields } = user;
-      usersExec.push(fields);
+      safeUsers.push(fields);
     }
-    return usersExec;
+
+    const pagination: PaginatedResult<SafeUser> = {
+      data: safeUsers,
+      pagination: {
+        nextOffset: to,
+        limit: limit,
+        totalItems: total,
+        hasNext: to < total,
+      }
+    }
+    return pagination;
   }
 
   async findById(id: string): Promise<SafeUser> {
