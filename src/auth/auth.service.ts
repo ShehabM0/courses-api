@@ -40,8 +40,29 @@ export class AuthService {
   }
 
   async logout(accessToken: string): Promise<{message: string}> {
-    await this.revokeAccessToken(accessToken);
+    await this.revokeToken(accessToken);
     return { message: "Logged out successfully" };
+  }
+
+  async refresh(refreshToken: string): Promise<Tokens> {
+    try {
+      const payload = await this.jwtService.verify(refreshToken, {
+        secret: process.env.JWT_REFRESH_TOKEN,
+      });
+
+      const revokedToken: boolean = await this.isTokenRevoked(refreshToken);
+      if(revokedToken)
+        throw new UnauthorizedException('Refresh token revoked!');
+      await this.revokeToken(refreshToken);
+
+      const uid: string = payload.id;
+      const user: SafeUser = await this.userService.findById(uid);
+
+      const tokens: Tokens = await this.generateTokens(user);
+      return tokens;
+    } catch (error) {
+      throw new UnauthorizedException('Invalid or expired refresh token!');
+    }
   }
 
   async generateTokens(user: SafeUser): Promise<Tokens> {
@@ -57,25 +78,25 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async revokeAccessToken(accessToken: string): Promise<void> {
+  async revokeToken(token: string): Promise<void> {
     try {
       await this.redisClient.set(
-        accessToken,
+        token,
         'revoked',
         parseInt(process.env.JWT_SECRET_TOKEN_EXP_TIME || '1', 10)
         * 86400
       );
-    } catch ( err: unknown ) {
-      throw new UnprocessableEntityException( 'Error revoking access token' );
+    } catch (error) {
+      throw new UnprocessableEntityException('Error revoking access token!');
     }
   }
 
-  async isAccessTokenRevoked(accessToken: string): Promise<boolean> {
+  async isTokenRevoked(token: string): Promise<boolean> {
     try {
-      const result: string | undefined = await this.redisClient.get(accessToken);
+      const result: string | undefined = await this.redisClient.get(token);
       return result === 'revoked';
-    } catch ( err: unknown ) {
-      throw new UnprocessableEntityException( 'Error checking token revocation' );
+    } catch (error) {
+      throw new UnprocessableEntityException('Error checking token revocation!');
     }
   }
 }

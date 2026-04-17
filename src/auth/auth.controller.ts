@@ -1,5 +1,5 @@
 import { Body, Controller, Post, HttpCode, HttpStatus, UseGuards, Request } from '@nestjs/common';
-import { SignInDTO, SignUpDTO } from './auth.dto';
+import { RefreshTokenDTO, SignInDTO, SignUpDTO } from './auth.dto';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
 
@@ -21,8 +21,13 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard)
   @Post('logout')
-  async logout(@Request() req) {
+  logout(@Request() req) {
     const accessToken = req.headers.authorization?.split(' ')[1];
     return this.authService.logout(accessToken);
+  }
+
+  @Post('refresh')
+  refresh(@Body() refreshTokenDTO: RefreshTokenDTO) {
+    return this.authService.refresh(refreshTokenDTO.refreshToken);
   }
 }

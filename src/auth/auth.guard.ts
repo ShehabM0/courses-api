@@ -16,7 +16,7 @@ export class AuthGuard implements CanActivate {
     if (!token) {
       throw new UnauthorizedException();
     }
-    const isRevoked = await this.authService.isAccessTokenRevoked(token);
+    const isRevoked = await this.authService.isTokenRevoked(token);
     if (isRevoked) {
       throw new UnauthorizedException('Token revoked');
     }

@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsString, Matches } from "class-validator";
+import { IsEmail, IsEnum, IsJWT, IsNotEmpty, IsString, Matches } from "class-validator";
 import { UserRole } from "src/users/user.entity";
 
 const passwordRegEx =
@@ -44,5 +44,9 @@ export class SignInDTO {
   //   one special character.`,
   // })
   password!: string;
+}
 
+export class RefreshTokenDTO {
+  @IsJWT()
+  refreshToken!: string;
 }
