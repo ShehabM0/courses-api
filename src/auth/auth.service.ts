@@ -1,12 +1,14 @@
-import { Inject, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
+import { VerificationService } from 'src/verification/verification.service';
 import { LoggedUser, SafeUser } from 'src/users/user.interface';
+import { SignUpDTO, VerifyEmailDTO } from "./auth.dto";
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { UserService } from '../users/user.service';
+import { MailService } from 'src/mail/mail.service';
 import { User} from 'src/users/user.entity';
 import type { Cache } from 'cache-manager';
 import { Tokens } from './auth.interface';
 import { JwtService } from '@nestjs/jwt';
-import { SignUpDTO } from "./auth.dto";
 import type { StringValue } from "ms";
 import * as bcrypt from "bcrypt";
 
@@ -14,25 +16,34 @@ import * as bcrypt from "bcrypt";
 export class AuthService {
   constructor(
     @Inject(CACHE_MANAGER) private readonly redisClient: Cache,
+    private verificationService: VerificationService,
+    private mailService: MailService,
     private userService: UserService,
     private jwtService: JwtService
   ) {}
 
-  async signUp(user: SignUpDTO): Promise<SafeUser> {
+  async signUp(user: SignUpDTO): Promise<{ message: string }> {
     const newUser: User = new User();
     Object.assign(newUser, user);
     newUser.password = await bcrypt.hash(user.password, 10);
 
-    const createdUser: SafeUser = await this.userService.create(newUser);
-    return createdUser;
+    await this.userService.create(newUser);
+    await this.verificationService.sendVerificationCode(user.email);
+
+    return { message: 'Verification code sent to your email.' };
   }
 
   async signIn(email: string, pass: string): Promise<LoggedUser> {
     // throws if not exists
     const user: SafeUser = await this.userService.findByEmail(email);
-    const verify: boolean = await this.userService.verifyPass(user.id, pass);
-    if(!verify)
+    const verifyPass: boolean = await this.userService.verifyPass(user.id, pass);
+    if(!verifyPass)
       throw new UnauthorizedException("That email and password combination didn't work!");
+
+    if(!user.isVerified) {
+      await this.verificationService.sendVerificationCode('dummyshehab@gmail.com');
+      throw new UnauthorizedException('Email not verified, check your email!');
+    }
 
     const tokens: Tokens = await this.generateTokens(user);
 
@@ -63,6 +74,24 @@ export class AuthService {
     } catch (error) {
       throw new UnauthorizedException('Invalid or expired refresh token!');
     }
+  }
+
+  async verifyEmail(verifyEmailDTO: VerifyEmailDTO): Promise<{message: string}> {
+    const { email, code } = verifyEmailDTO;
+    const user = await this.userService.findByEmail(email);
+
+    if (user.isVerified)
+      throw new BadRequestException('Email already verified!');
+
+    const verificationCode = await this.redisClient.get(`verify:${user.email}`);
+
+    if (verificationCode !== code)
+      throw new BadRequestException('Invalid verification code!');
+
+    const a = await this.userService.update(user.id, { isVerified: true });
+    console.log(a)
+
+    return { message: 'Email verified.' };
   }
 
   async generateTokens(user: SafeUser): Promise<Tokens> {

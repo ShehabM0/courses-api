@@ -1,15 +1,17 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
+import { MailModule } from 'src/mail/mail.module';
 import { UserModule } from '../users/user.module';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
 import { JwtModule } from '@nestjs/jwt';
 import type { StringValue } from "ms";
+import { VerificationModule } from 'src/verification/verification.module';
 
 @Module({
   imports: [
-    forwardRef(() => UserModule), // Wrap with forwardRef
+    forwardRef(() => UserModule),
 
     JwtModule.registerAsync({
       global: true,
@@ -21,6 +23,9 @@ import type { StringValue } from "ms";
         },
       }),
     }),
+
+    VerificationModule,
+    MailModule,
   ],
   providers: [AuthService, AuthGuard],
   controllers: [AuthController],

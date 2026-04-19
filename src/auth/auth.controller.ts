@@ -1,5 +1,5 @@
 import { Body, Controller, Post, HttpCode, HttpStatus, UseGuards, Request } from '@nestjs/common';
-import { RefreshTokenDTO, SignInDTO, SignUpDTO } from './auth.dto';
+import { RefreshTokenDTO, SignInDTO, SignUpDTO, VerifyEmailDTO } from './auth.dto';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
 
@@ -29,5 +29,11 @@ export class AuthController {
   @Post('refresh')
   refresh(@Body() refreshTokenDTO: RefreshTokenDTO) {
     return this.authService.refresh(refreshTokenDTO.refreshToken);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('verify-email')
+  verifyEmail(@Body() verifyEmailDTO: VerifyEmailDTO) {
+    return this.authService.verifyEmail(verifyEmailDTO);
   }
 }

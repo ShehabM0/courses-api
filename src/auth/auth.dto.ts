@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsJWT, IsNotEmpty, IsString, Matches } from "class-validator";
+import { IsEmail, IsEnum, IsJWT, IsNotEmpty, IsNumberString, IsString, Matches } from "class-validator";
 import { UserRole } from "src/users/user.entity";
 
 const passwordRegEx =
@@ -49,4 +49,14 @@ export class SignInDTO {
 export class RefreshTokenDTO {
   @IsJWT()
   refreshToken!: string;
+}
+
+export class VerifyEmailDTO {
+  @IsNotEmpty()
+  @IsEmail(undefined, { message: 'Please provide valid Email.' })
+  email!: string;
+
+  @IsNotEmpty()
+  @IsNumberString()
+  code!: string;
 }
