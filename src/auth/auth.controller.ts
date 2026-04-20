@@ -1,5 +1,5 @@
 import { Body, Controller, Post, HttpCode, HttpStatus, UseGuards, Request } from '@nestjs/common';
-import { ForgortPasswordDTO, RefreshTokenDTO, SignInDTO, SignUpDTO, VerifyEmailDTO } from './auth.dto';
+import { ForgortPasswordDTO, RefreshTokenDTO, ResetPasswordDTO, SignInDTO, SignUpDTO, VerifyEmailDTO } from './auth.dto';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
 
@@ -41,5 +41,11 @@ export class AuthController {
   @Post('forgot-password')
   forgotPassword(@Body() forgotPasswordDTO: ForgortPasswordDTO) {
     return this.authService.forgotPassword(forgotPasswordDTO.email);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('reset-password')
+  resetPassword(@Body() resetPasswordDTO: ResetPasswordDTO) {
+    return this.authService.resetPassword(resetPasswordDTO);
   }
 }

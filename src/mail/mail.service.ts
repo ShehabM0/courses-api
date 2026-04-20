@@ -17,13 +17,13 @@ const emailTemplates = {
 export class MailService {
   constructor(private mailerService: MailerService) {}
 
-  async sendMail(to: string, type: EmailType, code: string) {
+  async sendMail(email: string, type: EmailType, code: string) {
     const template = emailTemplates[type];
     if(!template)
       throw new Error('Invalid email type');
 
     await this.mailerService.sendMail({
-      to: "dummyshehab@gmail.com",
+      to: email,
       subject: template.subject,
       template: template.template,
       context: {

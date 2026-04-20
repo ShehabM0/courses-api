@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
 import { VerificationService } from 'src/verification/verification.service';
+import { ResetPasswordDTO, SignUpDTO, VerifyEmailDTO } from "./auth.dto";
 import { LoggedUser, SafeUser } from 'src/users/user.interface';
-import { SignUpDTO, VerifyEmailDTO } from "./auth.dto";
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { UserService } from '../users/user.service';
 import { EmailType } from 'src/mail/mail.type';
@@ -100,6 +100,20 @@ export class AuthService {
     } catch (error) {}
 
     return { message: 'If the account exists, a reset code has been sent.' };
+  }
+
+  async resetPassword(resetPasswordDTO: ResetPasswordDTO): Promise<{message: string}> {
+    const { email, password, code } = resetPasswordDTO;
+
+    const verifyCode: boolean =
+      await this.verificationService.verifyVerificationCode(email, code);
+    if (!verifyCode)
+      throw new BadRequestException('Invalid verification code!');
+
+    const user: SafeUser = await this.userService.findByEmail(email);
+    await this.userService.update(user.id, { password: password});
+
+    return { message: 'Password has been reset.' };
   }
 
   async generateTokens(user: SafeUser): Promise<Tokens> {
