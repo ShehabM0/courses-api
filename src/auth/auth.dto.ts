@@ -60,3 +60,9 @@ export class VerifyEmailDTO {
   @IsNumberString()
   code!: string;
 }
+
+export class ForgortPasswordDTO {
+  @IsNotEmpty()
+  @IsEmail(undefined, { message: 'Please provide valid Email.' })
+  email!: string;
+}

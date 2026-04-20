@@ -4,7 +4,7 @@ import { LoggedUser, SafeUser } from 'src/users/user.interface';
 import { SignUpDTO, VerifyEmailDTO } from "./auth.dto";
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { UserService } from '../users/user.service';
-import { MailService } from 'src/mail/mail.service';
+import { EmailType } from 'src/mail/mail.type';
 import { User} from 'src/users/user.entity';
 import type { Cache } from 'cache-manager';
 import { Tokens } from './auth.interface';
@@ -17,7 +17,6 @@ export class AuthService {
   constructor(
     @Inject(CACHE_MANAGER) private readonly redisClient: Cache,
     private verificationService: VerificationService,
-    private mailService: MailService,
     private userService: UserService,
     private jwtService: JwtService
   ) {}
@@ -28,7 +27,7 @@ export class AuthService {
     newUser.password = await bcrypt.hash(user.password, 10);
 
     await this.userService.create(newUser);
-    await this.verificationService.sendVerificationCode(user.email);
+    await this.verificationService.sendVerificationCode(user.email, EmailType.VERIFY_EMAIL);
 
     return { message: 'Verification code sent to your email.' };
   }
@@ -36,12 +35,13 @@ export class AuthService {
   async signIn(email: string, pass: string): Promise<LoggedUser> {
     // throws if not exists
     const user: SafeUser = await this.userService.findByEmail(email);
+    console.log(user)
     const verifyPass: boolean = await this.userService.verifyPass(user.id, pass);
     if(!verifyPass)
       throw new UnauthorizedException("That email and password combination didn't work!");
 
     if(!user.isVerified) {
-      await this.verificationService.sendVerificationCode('dummyshehab@gmail.com');
+      await this.verificationService.sendVerificationCode(email, EmailType.VERIFY_EMAIL);
       throw new UnauthorizedException('Email not verified, check your email!');
     }
 
@@ -83,15 +83,23 @@ export class AuthService {
     if (user.isVerified)
       throw new BadRequestException('Email already verified!');
 
-    const verificationCode = await this.redisClient.get(`verify:${user.email}`);
-
-    if (verificationCode !== code)
+    const verifyCode: boolean =
+      await this.verificationService.verifyVerificationCode(email, code);
+    if (!verifyCode)
       throw new BadRequestException('Invalid verification code!');
 
-    const a = await this.userService.update(user.id, { isVerified: true });
-    console.log(a)
+    await this.userService.update(user.id, { isVerified: true });
 
     return { message: 'Email verified.' };
+  }
+
+  async forgotPassword(email: string): Promise<{message: string}> {
+    try { // not found user catch without exposure or mailing
+      await this.userService.findByEmail(email);
+      await this.verificationService.sendVerificationCode(email, EmailType.RESET_PASSWORD);
+    } catch (error) {}
+
+    return { message: 'If the account exists, a reset code has been sent.' };
   }
 
   async generateTokens(user: SafeUser): Promise<Tokens> {
