@@ -1,8 +1,9 @@
-// mail.module.ts
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { MailService } from './mail.service';
 import { Module } from '@nestjs/common';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -21,7 +22,14 @@ import { Module } from '@nestjs/common';
           },
         },
         defaults: {
-          from: '"EduC" <no-reply@example.com>',
+          from: '"EduCore" <no-reply@example.com>',
+        },
+        template: {
+          dir: join(__dirname, '/templates'),
+          adapter: new HandlebarsAdapter(),
+          options: {
+            strict: true,
+          },
         },
       }),
     }),
