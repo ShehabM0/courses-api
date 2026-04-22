@@ -1,3 +1,5 @@
+import { VerificationModule } from 'src/verification/verification.module';
+import { TokenModule } from 'src/token/token.module';
 import { forwardRef, Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { MailModule } from 'src/mail/mail.module';
@@ -7,7 +9,6 @@ import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
 import { JwtModule } from '@nestjs/jwt';
 import type { StringValue } from "ms";
-import { VerificationModule } from 'src/verification/verification.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { VerificationModule } from 'src/verification/verification.module';
     }),
 
     VerificationModule,
+    TokenModule,
     MailModule,
   ],
   providers: [AuthService, AuthGuard],

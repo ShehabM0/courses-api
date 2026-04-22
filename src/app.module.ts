@@ -1,4 +1,5 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { RevokedToken } from './token/token.entity';
 import { RedisModule } from './redis/redis.module';
 import { UserModule } from './users/user.module';
 import { AuthModule } from './auth/auth.module';
@@ -16,7 +17,7 @@ import { Module } from '@nestjs/common';
         type: 'postgres',
         url: config.get<string>('DATABASE_URL'),
         ssl: true,
-        entities: [User],
+        entities: [User, RevokedToken],
         synchronize: config.get<string>('NODE_ENV') === 'DEV',
       }),
     }),

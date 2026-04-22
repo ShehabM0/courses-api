@@ -49,6 +49,10 @@ export class SignInDTO {
 export class RefreshTokenDTO {
   @IsJWT()
   refreshToken!: string;
+
+  @IsNotEmpty()
+  @IsString()
+  userId!: string;
 }
 
 export class VerifyEmailDTO {

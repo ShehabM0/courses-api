@@ -1,7 +1,8 @@
-import { BadRequestException, Inject, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { VerificationService } from 'src/verification/verification.service';
-import { ResetPasswordDTO, SignUpDTO, VerifyEmailDTO } from "./auth.dto";
+import { RefreshTokenDTO, ResetPasswordDTO, SignUpDTO, VerifyEmailDTO } from "./auth.dto";
 import { LoggedUser, SafeUser } from 'src/users/user.interface';
+import { TokenService } from 'src/token/token.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { UserService } from '../users/user.service';
 import { EmailType } from 'src/mail/mail.type';
@@ -9,7 +10,6 @@ import { User} from 'src/users/user.entity';
 import type { Cache } from 'cache-manager';
 import { Tokens } from './auth.interface';
 import { JwtService } from '@nestjs/jwt';
-import type { StringValue } from "ms";
 import * as bcrypt from "bcrypt";
 
 @Injectable()
@@ -17,6 +17,7 @@ export class AuthService {
   constructor(
     @Inject(CACHE_MANAGER) private readonly redisClient: Cache,
     private verificationService: VerificationService,
+    private tokenService: TokenService,
     private userService: UserService,
     private jwtService: JwtService
   ) {}
@@ -45,31 +46,40 @@ export class AuthService {
       throw new UnauthorizedException('Email not verified, check your email!');
     }
 
-    const tokens: Tokens = await this.generateTokens(user);
+    const tokens: Tokens = await this.tokenService.generateTokens(user);
 
     return { ...user, ...tokens };
   }
 
   async logout(accessToken: string): Promise<{message: string}> {
-    await this.revokeToken(accessToken);
-    return { message: "Logged out successfully" };
+    // await this.revokeToken(accessToken);
+    const payload = await this.jwtService.verifyAsync(accessToken); // sec
+
+    const expiresAt = new Date(payload.exp * 1000); // ms
+    const ttl = Math.floor((expiresAt.getTime() - Date.now()) / 1000); // sec
+
+    console.log(expiresAt)
+    console.log(ttl)
+
+    return { message: "Logged out successfully." };
   }
 
-  async refresh(refreshToken: string): Promise<Tokens> {
+  async refresh(refreshTokenDTO: RefreshTokenDTO): Promise<Tokens> {
+    const { userId, refreshToken } = refreshTokenDTO;
     try {
       const payload = await this.jwtService.verify(refreshToken, {
         secret: process.env.JWT_REFRESH_TOKEN,
       });
 
-      const revokedToken: boolean = await this.isTokenRevoked(refreshToken);
+      const revokedToken: boolean = await this.tokenService.isTokenRevoked(userId, refreshToken);
       if(revokedToken)
         throw new UnauthorizedException('Refresh token revoked!');
-      await this.revokeToken(refreshToken);
+      await this.tokenService.revokeToken(userId, refreshToken);
 
       const uid: string = payload.id;
       const user: SafeUser = await this.userService.findById(uid);
 
-      const tokens: Tokens = await this.generateTokens(user);
+      const tokens: Tokens = await this.tokenService.generateTokens(user);
       return tokens;
     } catch (error) {
       throw new UnauthorizedException('Invalid or expired refresh token!');
@@ -113,41 +123,8 @@ export class AuthService {
     const user: SafeUser = await this.userService.findByEmail(email);
     await this.userService.update(user.id, { password: password});
 
+    await this.tokenService.revokeAllTokens(user.id);
+
     return { message: 'Password has been reset.' };
-  }
-
-  async generateTokens(user: SafeUser): Promise<Tokens> {
-    const payload = { id: user.id, email: user.email };
-    const accessToken = await this.jwtService.signAsync(payload, {
-      secret: process.env.JWT_ACCESS_TOKEN! as StringValue,
-      expiresIn: process.env.JWT_ACCESS_TOKEN_EXP_TIME! as StringValue,
-    });
-    const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: process.env.JWT_REFRESH_TOKEN! as StringValue,
-      expiresIn: process.env.JWT_REFRESH_TOKEN_EXP_TIME! as StringValue,
-    });
-    return { accessToken, refreshToken };
-  }
-
-  async revokeToken(token: string): Promise<void> {
-    try {
-      await this.redisClient.set(
-        token,
-        'revoked',
-        parseInt(process.env.JWT_SECRET_TOKEN_EXP_TIME || '1', 10)
-        * 86400
-      );
-    } catch (error) {
-      throw new UnprocessableEntityException('Error revoking access token!');
-    }
-  }
-
-  async isTokenRevoked(token: string): Promise<boolean> {
-    try {
-      const result: string | undefined = await this.redisClient.get(token);
-      return result === 'revoked';
-    } catch (error) {
-      throw new UnprocessableEntityException('Error checking token revocation!');
-    }
   }
 }
