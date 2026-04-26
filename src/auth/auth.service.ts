@@ -3,11 +3,9 @@ import { VerificationService } from 'src/verification/verification.service';
 import { RefreshTokenDTO, ResetPasswordDTO, SignUpDTO, VerifyEmailDTO } from "./auth.dto";
 import { LoggedUser, SafeUser } from 'src/users/user.interface';
 import { TokenService } from 'src/token/token.service';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { UserService } from '../users/user.service';
 import { EmailType } from 'src/mail/mail.type';
 import { User} from 'src/users/user.entity';
-import type { Cache } from 'cache-manager';
 import { Tokens } from './auth.interface';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from "bcrypt";
@@ -15,7 +13,6 @@ import * as bcrypt from "bcrypt";
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject(CACHE_MANAGER) private readonly redisClient: Cache,
     private verificationService: VerificationService,
     private tokenService: TokenService,
     private userService: UserService,
@@ -36,7 +33,6 @@ export class AuthService {
   async signIn(email: string, pass: string): Promise<LoggedUser> {
     // throws if not exists
     const user: SafeUser = await this.userService.findByEmail(email);
-    console.log(user)
     const verifyPass: boolean = await this.userService.verifyPass(user.id, pass);
     if(!verifyPass)
       throw new UnauthorizedException("That email and password combination didn't work!");
@@ -57,9 +53,6 @@ export class AuthService {
 
     const expiresAt = new Date(payload.exp * 1000); // ms
     const ttl = Math.floor((expiresAt.getTime() - Date.now()) / 1000); // sec
-
-    console.log(expiresAt)
-    console.log(ttl)
 
     return { message: "Logged out successfully." };
   }

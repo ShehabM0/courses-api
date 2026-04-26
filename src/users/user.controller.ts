@@ -1,8 +1,11 @@
 import { Body, Controller, Delete, Get, Param, Patch, Query, Request, UseGuards } from "@nestjs/common";
 import { PaginationDTO } from "src/common/pagination.dto";
+import { RolesGuard } from "src/roles/roles.guard";
+import { Roles } from "src/roles/roles.decorator";
 import { AuthGuard } from "src/auth/auth.guard";
 import { UserService } from "./user.service";
 import { UpdateUserDTO } from "./user.dto";
+import { UserRole } from "./user.entity";
 
 @Controller('user')
 export class UserController {
@@ -15,16 +18,19 @@ export class UserController {
     return this.userService.findById(id);
   }
 
-  // ---- TODO: Admin RoleGuard ----
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Get()
   findAll(@Query() paginationDTO: PaginationDTO) {
     return this.userService.findAll(paginationDTO);
   }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Get(':id')
   findById(@Param('id') id: string) {
     return this.userService.findById(id);
   }
-  // -------------------------------
 
   @UseGuards(AuthGuard)
   @Patch()

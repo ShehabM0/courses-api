@@ -21,7 +21,7 @@ export class TokenService {
   ) {}
 
   async generateTokens(user: SafeUser): Promise<Tokens> {
-    const payload = { uid: user.id, email: user.email };
+    const payload = { uid: user.id, email: user.email, role: user.role };
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: process.env.JWT_ACCESS_TOKEN! as StringValue,
       expiresIn: process.env.JWT_ACCESS_TOKEN_EXP_TIME! as StringValue,
