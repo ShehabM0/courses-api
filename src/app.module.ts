@@ -1,6 +1,8 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Category } from './categories/category.entity';
 import { RevokedToken } from './token/token.entity';
 import { RedisModule } from './redis/redis.module';
+import { Course } from './courses/course.entity';
 import { UserModule } from './users/user.module';
 import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -17,7 +19,10 @@ import { Module } from '@nestjs/common';
         type: 'postgres',
         url: config.get<string>('DATABASE_URL'),
         ssl: true,
-        entities: [User, RevokedToken],
+        entities: [
+          User, RevokedToken,
+          Course, Category
+        ],
         synchronize: config.get<string>('NODE_ENV') === 'DEV',
       }),
     }),
