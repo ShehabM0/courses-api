@@ -2,11 +2,11 @@ import { ConflictException, Injectable, NotFoundException } from "@nestjs/common
 import { PaginatedResult } from "src/common/pagination.interface";
 import { PaginationDTO } from "src/common/pagination.dto";
 import { InjectRepository } from "@nestjs/typeorm";
+import { User, UserRole } from "./user.entity";
 import { DeleteResult } from "typeorm/browser";
 import { SafeUser } from "./user.interface";
 import { UpdateUserDTO } from "./user.dto";
 import { Repository } from "typeorm";
-import { User } from "./user.entity";
 import * as bcrypt from "bcrypt";
 
 @Injectable()
@@ -26,6 +26,12 @@ export class UserService {
 
     const { password, ...fields } = createdUser;
     return fields;
+  }
+  
+  async findAllInstructors(): Promise<SafeUser[]> {
+    const instructors: SafeUser[] = 
+      await this.userRepository.find({ where: { role: UserRole.INSTRUCTOR }});
+    return instructors;
   }
 
   async findAll(paginationDTO: PaginationDTO): Promise<PaginatedResult<SafeUser>> {

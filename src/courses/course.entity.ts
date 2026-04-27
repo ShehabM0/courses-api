@@ -13,7 +13,7 @@ export class Course {
   id!: string;
 
   @ManyToOne(() => User)
-  instrutor!: User
+  instructor!: User
 
   @Column({ length: 100 })
   title!: string;
@@ -44,4 +44,3 @@ export class Course {
   @UpdateDateColumn()
   updatedAt!: Date;
 }
-
