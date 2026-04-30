@@ -1,3 +1,4 @@
+import { PaginatedResult } from 'src/common/pagination.interface';
 import { CategoryService } from 'src/categories/category.service';
 import { Category } from 'src/categories/category.entity';
 import { Course, CourseStatus } from './course.entity';
@@ -19,15 +20,15 @@ export class CourseSeed {
 
   async seed() {
     const addedCourses = 20;
-    const instructors = await this.userService.findAllInstructors();
-    const categories = await this.categoryService.findAll();
+    const instructors: SafeUser[] = await this.userService.findAllInstructors();
+    const categories: PaginatedResult<Category> = await this.categoryService.findAll({limit: undefined, offset:undefined});
 
     for (let i = 0; i < addedCourses; i++) {
       const randomInstructor: SafeUser =
         instructors[Math.floor(Math.random() * instructors.length)];
 
       const randomCategories: Category[] = faker.helpers.arrayElements(
-        categories,
+        categories.data,
         faker.number.int({ min: 1, max: 3 }),
       );
 

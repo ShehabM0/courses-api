@@ -9,6 +9,9 @@ export class Category {
   @Column({ unique: true })
   name!: string;
 
+  @Column({ unique: true })
+  slug!: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 

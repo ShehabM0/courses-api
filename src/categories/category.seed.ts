@@ -52,12 +52,14 @@ export class CategorySeed {
   async seed() {
     let addedCategories = 0;
     for (const name of categories) {
+      const slug = name.toLocaleLowerCase().trim().replace(/\s+/g, '-');
+
       const exists = await this.categoryRepository.findOne({
-        where: { name },
+        where: { slug },
       });
 
       if (!exists) {
-        const category = this.categoryRepository.create({ name });
+        const category = this.categoryRepository.create({ name, slug });
         await this.categoryRepository.save(category);
         addedCategories++;
       }
