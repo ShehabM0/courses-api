@@ -6,6 +6,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { DeleteResult } from "typeorm/browser";
 import { Category } from "./category.entity";
 import { Repository } from "typeorm";
+import { ILike } from 'typeorm';
 
 @Injectable()
 export class CategoryService {
@@ -15,16 +16,17 @@ export class CategoryService {
   ) {}
 
   async findAll(paginationDTO: PaginationDTO): Promise<PaginatedResult<Category>> {
-    const total: number = await this.categoryRepository.count();
-    const offset = paginationDTO.offset ?? 0, limit = paginationDTO.limit ?? total;
+    const offset = paginationDTO.offset ?? 0;
+    const limit = paginationDTO.limit ?? 10;
+    const query = paginationDTO.query?.trim() ?? '';
 
-    const from = offset
-    const to = Math.min(from + limit, total)
-
-    const categories = await this.categoryRepository.find({
+    const [categories, total] = await this.categoryRepository.findAndCount({
+      where: query ? { slug: ILike(`%${query}%`) } : {},
       take: limit,
       skip: offset,
     });
+
+    const to = Math.min(offset + limit, total);
 
     const pagination: PaginatedResult<Category> = {
       data: categories,
