@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { PaginatedResult } from "src/common/pagination.interface";
 import { PaginationDTO } from "src/common/pagination.dto";
+import { Course } from "src/courses/course.entity";
 import { UpdateCategoryDTO } from "./category.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { DeleteResult } from "typeorm/browser";
@@ -75,5 +76,38 @@ export class CategoryService {
 
     const del: DeleteResult = await this.categoryRepository.delete(findCategory.id);
     return { deleted: del.affected === 1 };
+  }
+
+  async findCourses(slug: string, paginationDTO: PaginationDTO) {
+    slug = slug.toLocaleLowerCase().trim().replace(/\s+/g, '-');
+
+    const category: Category | null = await this.categoryRepository.findOne({
+        where: { slug },
+        relations: ['courses']
+    });
+    if(!category)
+      throw new NotFoundException('Category not found!');
+
+    const categoryCourses: Course[] = category.courses;
+
+
+    const total: number = categoryCourses.length;
+    const offset = paginationDTO.offset ?? 0, limit = paginationDTO.limit ?? total;
+
+    const from = offset
+    const to = Math.min(from + limit, total)
+
+    const courses: Course[] = categoryCourses.slice(from, to);
+
+    const pagination: PaginatedResult<Course> = {
+      data: courses,
+      pagination: {
+        nextOffset: to,
+        limit: limit,
+        totalItems: total,
+        hasNext: to < total,
+      }
+    }
+    return pagination;
   }
 }

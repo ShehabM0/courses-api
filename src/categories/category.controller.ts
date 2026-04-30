@@ -38,4 +38,10 @@ export class CategoryController {
   delete(@Param('id') id: string) {
     return this.categoryService.delete(id);
   }
+
+  @UseGuards(AuthGuard)
+  @Get(':slug/courses')
+  findCourses(@Param('slug') slug: string, @Query() paginationDTO: PaginationDTO) {
+    return this.categoryService.findCourses(slug, paginationDTO);
+  }
 }
