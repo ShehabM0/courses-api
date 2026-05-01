@@ -14,7 +14,7 @@ export class UserController {
   @UseGuards(AuthGuard)
   @Get('profile')
   getProfile(@Request() req) {
-    const id: string = req.user.id;
+    const id: string = req.user.uid;
     return this.userService.findById(id);
   }
 
@@ -35,14 +35,14 @@ export class UserController {
   @UseGuards(AuthGuard)
   @Patch()
   update(@Request() req, @Body() updateUserDTO: UpdateUserDTO) {
-    const id: string = req.user.id;
+    const id: string = req.user.uid;
     return this.userService.update(id, updateUserDTO);
   }
 
   @UseGuards(AuthGuard)
   @Delete()
   delete(@Request() req) {
-    const id: string = req.user.id;
+    const id: string = req.user.uid;
     return this.userService.delete(id);
   }
 }

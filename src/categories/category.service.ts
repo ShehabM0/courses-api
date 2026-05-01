@@ -16,6 +16,11 @@ export class CategoryService {
     private readonly categoryRepository: Repository<Category>,
   ) {}
 
+  async findById(id: string): Promise<Category | null> {
+    const category: Category | null = await this.categoryRepository.findOneBy({id});
+    return category;
+  }
+
   async findAll(paginationDTO: PaginationDTO): Promise<PaginatedResult<Category>> {
     const offset = paginationDTO.offset ?? 0;
     const limit = paginationDTO.limit ?? 10;

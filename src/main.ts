@@ -1,3 +1,4 @@
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { CategorySeed } from './categories/category.seed';
 import { CourseSeed } from './courses/course.seed';
 import { ValidationPipe } from '@nestjs/common';
@@ -5,7 +6,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -13,6 +15,7 @@ async function bootstrap() {
     }),
   );
 
+  app.useStaticAssets('uploads');
   await app.listen(process.env.PORT ?? 3000);
 
   // Seed
