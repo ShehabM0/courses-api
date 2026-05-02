@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Query, Request, UseGuards } from "@nestjs/common";
-import { PaginationDTO } from "src/common/pagination.dto";
+import { ListPaginationDTO } from "src/common/pagination/pagination.dto";
 import { RolesGuard } from "src/roles/roles.guard";
 import { Roles } from "src/roles/roles.decorator";
 import { AuthGuard } from "src/auth/auth.guard";
@@ -21,7 +21,7 @@ export class UserController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get()
-  findAll(@Query() paginationDTO: PaginationDTO) {
+  findAll(@Query() paginationDTO: ListPaginationDTO) {
     return this.userService.findAll(paginationDTO);
   }
 

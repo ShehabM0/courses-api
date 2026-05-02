@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import { ListPaginationDTO } from "src/common/pagination/pagination.dto";
 import { CreateCategoryDTO, UpdateCategoryDTO } from "./category.dto";
-import { PaginationDTO } from "src/common/pagination.dto";
 import { CategoryService } from "./category.service";
 import { RolesGuard } from "src/roles/roles.guard";
 import { Roles } from "src/roles/roles.decorator";
@@ -14,7 +14,7 @@ export class CategoryController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get('')
-  findAll(@Query() paginationDTO: PaginationDTO) {
+  findAll(@Query() paginationDTO: ListPaginationDTO) {
     return this.categoryService.findAll(paginationDTO);
   }
 
@@ -41,7 +41,7 @@ export class CategoryController {
 
   @UseGuards(AuthGuard)
   @Get(':slug/courses')
-  findCourses(@Param('slug') slug: string, @Query() paginationDTO: PaginationDTO) {
+  findCourses(@Param('slug') slug: string, @Query() paginationDTO: ListPaginationDTO) {
     return this.categoryService.findCourses(slug, paginationDTO);
   }
 }

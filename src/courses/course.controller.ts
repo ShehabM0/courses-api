@@ -1,6 +1,6 @@
 import { Body, Controller, Post, Request, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { multerOptions } from '../common/config/multer.config';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { multerOptions } from '../common/multer.config';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { UserRole } from 'src/users/user.entity';

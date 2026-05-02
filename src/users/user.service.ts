@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { PaginatedResult } from "src/common/pagination.interface";
-import { PaginationDTO } from "src/common/pagination.dto";
+import { ListPaginatedResult } from "src/common/pagination/pagination.interface";
+import { ListPaginationDTO } from "src/common/pagination/pagination.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User, UserRole } from "./user.entity";
 import { DeleteResult } from "typeorm/browser";
@@ -34,7 +34,7 @@ export class UserService {
     return instructors;
   }
 
-  async findAll(paginationDTO: PaginationDTO): Promise<PaginatedResult<SafeUser>> {
+  async findAll(paginationDTO: ListPaginationDTO): Promise<ListPaginatedResult<SafeUser>> {
     const total: number = await this.userRepository.count();
     const offset = paginationDTO.offset ?? 0, limit = paginationDTO.limit ?? total;
 
@@ -52,7 +52,7 @@ export class UserService {
       safeUsers.push(fields);
     }
 
-    const pagination: PaginatedResult<SafeUser> = {
+    const pagination: ListPaginatedResult<SafeUser> = {
       data: safeUsers,
       pagination: {
         nextOffset: to,

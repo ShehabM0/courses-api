@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { PaginatedResult } from "src/common/pagination.interface";
-import { PaginationDTO } from "src/common/pagination.dto";
+import { ListPaginatedResult } from "src/common/pagination/pagination.interface";
+import { ListPaginationDTO } from "src/common/pagination/pagination.dto";
 import { Course } from "src/courses/course.entity";
 import { UpdateCategoryDTO } from "./category.dto";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -25,7 +25,7 @@ export class CategoryService {
     return await this.categoryRepository.findByIds(categoryIds);
   }
 
-  async findAll(paginationDTO: PaginationDTO): Promise<PaginatedResult<Category>> {
+  async findAll(paginationDTO: ListPaginationDTO): Promise<ListPaginatedResult<Category>> {
     const offset = paginationDTO.offset ?? 0;
     const limit = paginationDTO.limit ?? 10;
     const query = paginationDTO.query?.trim() ?? '';
@@ -38,7 +38,7 @@ export class CategoryService {
 
     const to = Math.min(offset + limit, total);
 
-    const pagination: PaginatedResult<Category> = {
+    const pagination: ListPaginatedResult<Category> = {
       data: categories,
       pagination: {
         nextOffset: to,
@@ -87,7 +87,7 @@ export class CategoryService {
     return { deleted: del.affected === 1 };
   }
 
-  async findCourses(slug: string, paginationDTO: PaginationDTO) {
+  async findCourses(slug: string, paginationDTO: ListPaginationDTO) {
     slug = slug.toLocaleLowerCase().trim().replace(/\s+/g, '-');
 
     const category: Category | null = await this.categoryRepository.findOne({
@@ -108,7 +108,7 @@ export class CategoryService {
 
     const courses: Course[] = categoryCourses.slice(from, to);
 
-    const pagination: PaginatedResult<Course> = {
+    const pagination: ListPaginatedResult<Course> = {
       data: courses,
       pagination: {
         nextOffset: to,
