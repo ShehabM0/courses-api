@@ -25,12 +25,7 @@ export class CourseService {
     const thumbnailPath: string | undefined = file ? `/uploads/${file.filename}` : undefined;
 
     const categoryIds: string[] = createCourseDTO?.categoryIds ?? [];
-    const categories: Category[] = [];
-    for(const categoryId of categoryIds) {
-      const category: Category | null = await this.categoryService.findById(categoryId);
-      if(category)
-        categories.push(category);
-    }
+    const categories: Category[] = await this.categoryService.findByIds(categoryIds);
 
     const instructor: SafeUser = await this.userService.findById(instructorId);
 
