@@ -1,5 +1,6 @@
 import { Transform, Type } from "class-transformer";
 import { IsArray, IsNumber, IsOptional, IsString, IsUUID, Min } from "class-validator";
+import { PagePaginationDTO } from "src/common/pagination/pagination.dto";
 
 export class CreateCourseDTO {
   @IsString()
@@ -27,4 +28,21 @@ export class CreateCourseDTO {
   @IsArray()
   @IsUUID('4', { each: true })
   categoryIds?: string[]
+}
+
+export class CoursePaginationDTO extends PagePaginationDTO {
+  @IsOptional()
+  @IsString()
+  categorySlug?: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  minPrice?: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  maxPrice?: number;
 }
