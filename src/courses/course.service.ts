@@ -1,13 +1,12 @@
+import { CoursePaginationDTO, CreateCourseDTO } from "./course.dto";
 import { CategoryService } from "src/categories/category.service";
 import { Category } from "src/categories/category.entity";
-import { UserService } from "src/users/user.service";
-import { SafeUser } from "src/users/user.interface";
-import { InjectRepository } from "@nestjs/typeorm";
-import { CoursePaginationDTO, CreateCourseDTO } from "./course.dto";
-import { Injectable } from "@nestjs/common";
 import { Course, CourseStatus } from "./course.entity";
+import { UserService } from "src/users/user.service";
+import { InjectRepository } from "@nestjs/typeorm";
 import { Brackets, Repository } from "typeorm";
-import { PagePaginationDTO } from "src/common/pagination/pagination.dto";
+import { User } from "src/users/user.entity";
+import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class CourseService {
@@ -28,7 +27,7 @@ export class CourseService {
     const categoryIds: string[] = createCourseDTO?.categoryIds ?? [];
     const categories: Category[] = await this.categoryService.findByIds(categoryIds);
 
-    const instructor: SafeUser = await this.userService.findById(instructorId);
+    const instructor: User = await this.userService.findById(instructorId);
 
     const course: Course = this.courseRepository.create({
       ...createCourseDTO,

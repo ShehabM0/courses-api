@@ -3,8 +3,8 @@ import { CategoryService } from 'src/categories/category.service';
 import { Category } from 'src/categories/category.entity';
 import { Course, CourseStatus } from './course.entity';
 import { UserService } from 'src/users/user.service';
-import { SafeUser } from 'src/users/user.interface';
 import { InjectRepository } from '@nestjs/typeorm';
+import { User } from 'src/users/user.entity';
 import { Injectable } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 import { Repository } from 'typeorm';
@@ -20,11 +20,11 @@ export class CourseSeed {
 
   async seed() {
     const addedCourses = 20;
-    const instructors: SafeUser[] = await this.userService.findAllInstructors();
+    const instructors: User[] = await this.userService.findAllInstructors();
     const categories: ListPaginatedResult<Category> = await this.categoryService.findAll({limit: undefined, offset:undefined});
 
     for (let i = 0; i < addedCourses; i++) {
-      const randomInstructor: SafeUser =
+      const randomInstructor: User =
         instructors[Math.floor(Math.random() * instructors.length)];
 
       const randomCategories: Category[] = faker.helpers.arrayElements(

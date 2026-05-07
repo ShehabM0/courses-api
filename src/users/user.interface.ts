@@ -3,4 +3,4 @@ import { User } from "./user.entity";
 
 export type SafeUser= Omit<User, 'password'>;
 
-export type LoggedUser = SafeUser & Tokens;
+export type LoggedUser = User & Tokens;

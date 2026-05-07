@@ -1,7 +1,7 @@
-import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { VerificationService } from 'src/verification/verification.service';
 import { RefreshTokenDTO, ResetPasswordDTO, SignUpDTO, VerifyEmailDTO } from "./auth.dto";
-import { LoggedUser, SafeUser } from 'src/users/user.interface';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { VerificationService } from 'src/verification/verification.service';
+import { LoggedUser } from 'src/users/user.interface';
 import { TokenService } from 'src/token/token.service';
 import { UserService } from '../users/user.service';
 import { EmailType } from 'src/mail/mail.type';
@@ -31,9 +31,8 @@ export class AuthService {
   }
 
   async signIn(email: string, pass: string): Promise<LoggedUser> {
-    // throws if not exists
-    const user: SafeUser = await this.userService.findByEmail(email);
-    const verifyPass: boolean = await this.userService.verifyPass(user.id, pass);
+    const user: User = await this.userService.findByEmail(email);
+    const verifyPass: boolean = await this.userService.verifyPassword(user.id, pass);
     if(!verifyPass)
       throw new UnauthorizedException("That email and password combination didn't work!");
 
@@ -47,8 +46,8 @@ export class AuthService {
     return { ...user, ...tokens };
   }
 
-  async logout(accessToken: string): Promise<{message: string}> {
-    // await this.revokeToken(accessToken);
+  async logout(id: string, accessToken: string): Promise<{message: string}> {
+    await this.tokenService.revokeToken(id, accessToken);
     const payload = await this.jwtService.verifyAsync(accessToken); // sec
 
     const expiresAt = new Date(payload.exp * 1000); // ms
@@ -70,7 +69,7 @@ export class AuthService {
       await this.tokenService.revokeToken(userId, refreshToken);
 
       const uid: string = payload.id;
-      const user: SafeUser = await this.userService.findById(uid);
+      const user: User = await this.userService.findById(uid);
 
       const tokens: Tokens = await this.tokenService.generateTokens(user);
       return tokens;
@@ -113,8 +112,8 @@ export class AuthService {
     if (!verifyCode)
       throw new BadRequestException('Invalid verification code!');
 
-    const user: SafeUser = await this.userService.findByEmail(email);
-    await this.userService.update(user.id, { password: password});
+    const user: User = await this.userService.findByEmail(email);
+    await this.userService.update(user.id, { password });
 
     await this.tokenService.revokeAllTokens(user.id);
 

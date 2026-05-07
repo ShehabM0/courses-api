@@ -1,10 +1,10 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { SafeUser } from 'src/users/user.interface';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Tokens } from 'src/auth/auth.interface';
 import { LessThan, Repository } from 'typeorm';
 import { RevokedToken } from "./token.entity";
+import { User } from 'src/users/user.entity';
 import type { Cache } from 'cache-manager';
 import { JwtService } from '@nestjs/jwt';
 import type { StringValue } from 'ms';
@@ -20,7 +20,7 @@ export class TokenService {
     private jwtService: JwtService
   ) {}
 
-  async generateTokens(user: SafeUser): Promise<Tokens> {
+  async generateTokens(user: User): Promise<Tokens> {
     const payload = { uid: user.id, email: user.email, role: user.role };
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: process.env.JWT_ACCESS_TOKEN! as StringValue,

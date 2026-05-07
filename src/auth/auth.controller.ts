@@ -23,7 +23,8 @@ export class AuthController {
   @Post('logout')
   logout(@Request() req) {
     const accessToken = req.headers.authorization?.split(' ')[1];
-    return this.authService.logout(accessToken);
+    const id: string = req.user.uid;
+    return this.authService.logout(id, accessToken);
   }
 
   @Post('refresh')
