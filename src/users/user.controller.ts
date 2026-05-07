@@ -4,7 +4,7 @@ import { RolesGuard } from "src/roles/roles.guard";
 import { Roles } from "src/roles/roles.decorator";
 import { AuthGuard } from "src/auth/auth.guard";
 import { UserService } from "./user.service";
-import { UpdateUserDTO } from "./user.dto";
+import { UpdateUserDTO, UpdateUserPassDTO } from "./user.dto";
 import { UserRole } from "./user.entity";
 
 @Controller('user')
@@ -37,6 +37,13 @@ export class UserController {
   update(@Request() req, @Body() updateUserDTO: UpdateUserDTO) {
     const id: string = req.user.uid;
     return this.userService.update(id, updateUserDTO);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('update-password')
+  updatePassword(@Request() req, @Body() updateUserPassDTO: UpdateUserPassDTO) {
+    const id: string = req.user.uid;
+    return this.userService.updatePassword(id, updateUserPassDTO);
   }
 
   @UseGuards(AuthGuard)

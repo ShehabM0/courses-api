@@ -1,11 +1,11 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { ListPaginatedResult } from "src/common/pagination/pagination.interface";
 import { ListPaginationDTO } from "src/common/pagination/pagination.dto";
+import { UpdateUserDTO, UpdateUserPassDTO } from "./user.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User, UserRole } from "./user.entity";
 import { DeleteResult } from "typeorm/browser";
 import { SafeUser } from "./user.interface";
-import { UpdateUserDTO } from "./user.dto";
 import { Repository } from "typeorm";
 import * as bcrypt from "bcrypt";
 
@@ -13,7 +13,7 @@ import * as bcrypt from "bcrypt";
 export class UserService {
   constructor(@InjectRepository(User) private readonly userRepository: Repository<User>) {}
   
-  async create(user: User): Promise<SafeUser> {
+  async create(user: User): Promise<User> {
     const findUser: boolean = await this.userRepository.existsBy({ email: user.email });
     if(findUser)
       throw new ConflictException('Email already exists');
@@ -23,18 +23,16 @@ export class UserService {
     newUser.password = await bcrypt.hash(user.password, 10);
 
     const createdUser: User = await this.userRepository.save(newUser);
-
-    const { password, ...fields } = createdUser;
-    return fields;
+    return createdUser;
   }
   
-  async findAllInstructors(): Promise<SafeUser[]> {
-    const instructors: SafeUser[] = 
+  async findAllInstructors(): Promise<User[]> {
+    const instructors: User[] = 
       await this.userRepository.find({ where: { role: UserRole.INSTRUCTOR }});
     return instructors;
   }
 
-  async findAll(paginationDTO: ListPaginationDTO): Promise<ListPaginatedResult<SafeUser>> {
+  async findAll(paginationDTO: ListPaginationDTO): Promise<ListPaginatedResult<User>> {
     const total: number = await this.userRepository.count();
     const offset = paginationDTO.offset ?? 0, limit = paginationDTO.limit ?? total;
 
@@ -46,14 +44,8 @@ export class UserService {
       skip: offset,
     });
 
-    const safeUsers: SafeUser[] = [];
-    for(let user of users) {
-      const { password, ...fields } = user;
-      safeUsers.push(fields);
-    }
-
-    const pagination: ListPaginatedResult<SafeUser> = {
-      data: safeUsers,
+    const pagination: ListPaginatedResult<User> = {
+      data: users,
       pagination: {
         nextOffset: to,
         limit: limit,
@@ -64,22 +56,18 @@ export class UserService {
     return pagination;
   }
 
-  async findById(id: string): Promise<SafeUser> {
+  async findById(id: string): Promise<User> {
     const user: User | null = await this.userRepository.findOneBy({ id });
     if(!user)
       throw new NotFoundException('User not found!');
-
-    const { password, ...fields } = user;
-    return fields;
+    return user;
   }
 
-  async findByEmail(email: string): Promise<SafeUser> {
+  async findByEmail(email: string): Promise<User> {
     const user: User | null = await this.userRepository.findOneBy({ email });
     if(!user)
       throw new NotFoundException('User not found!');
-
-    const { password, ...fields } = user;
-    return fields;
+    return user;
   }
 
   async update(id: string, user: UpdateUserDTO): Promise<SafeUser> {
@@ -91,9 +79,27 @@ export class UserService {
       user.password = await bcrypt.hash(user.password, 10);
 
     Object.assign(findUser, user);
-    const updatedUser: User = await this.userRepository.save(findUser);
+    await this.userRepository.save(findUser);
 
-    const { password, ...fields } = updatedUser;
+    const { password, ...fields } = findUser;
+    return fields;
+  }
+
+  async updatePassword(id: string, updatePasswordDTO: UpdateUserPassDTO): Promise<SafeUser> {
+    const user: User | null = await this.userRepository.findOneBy({ id });
+    if(!user) 
+      throw new NotFoundException('User not found!');
+  
+    const oldPassword = updatePasswordDTO.oldPassword!;
+    const newPassword = updatePasswordDTO.newPassword!;
+    const verifyPass: boolean = await this.verifyPassword(user.id, oldPassword);
+    if(!verifyPass)
+      throw new UnauthorizedException('Old password is incorrect!');
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.save(user);
+
+    const { password, ...fields } = user;
     return fields;
   }
 
@@ -106,8 +112,11 @@ export class UserService {
     return { deleted: del.affected === 1 };
   }
 
-  async verifyPass(id: string, pass: string): Promise<boolean> {
-    const user: User | null = await this.userRepository.findOneBy({ id });
+  async verifyPassword(id: string, pass: string): Promise<boolean> {
+    const user: User | null = await this.userRepository.findOne({
+      where: { id },
+      select: { password: true }
+    });
     if(!user)
       throw new NotFoundException('User not found!');
 
