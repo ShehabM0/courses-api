@@ -113,7 +113,11 @@ export class AuthService {
       throw new BadRequestException('Invalid verification code!');
 
     const user: User = await this.userService.findByEmail(email);
-    await this.userService.update(user.id, { password });
+    await this.userService.updatePassword(
+      user.id,
+      { oldPassword: '', newPassword: password },
+      true
+    );
 
     await this.tokenService.revokeAllTokens(user.id);
 

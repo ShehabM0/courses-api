@@ -70,29 +70,25 @@ export class UserService {
     return user;
   }
 
-  async update(id: string, user: UpdateUserDTO): Promise<SafeUser> {
-    const findUser: User | null = await this.userRepository.findOneBy({ id });
-    if(!findUser) 
+  async update(id: string, userDTO: UpdateUserDTO): Promise<SafeUser> {
+    const user: User | null = await this.userRepository.findOneBy({ id });
+    if(!user) 
       throw new NotFoundException('User not found!');
-  
-    if (user.password)
-      user.password = await bcrypt.hash(user.password, 10);
 
-    Object.assign(findUser, user);
-    await this.userRepository.save(findUser);
+    Object.assign(user, userDTO);
+    await this.userRepository.save(user);
 
-    const { password, ...fields } = findUser;
-    return fields;
+    return user;
   }
 
-  async updatePassword(id: string, updatePasswordDTO: UpdateUserPassDTO): Promise<SafeUser> {
+  // slef: resetPassword call
+  async updatePassword(id: string, updatePasswordDTO: UpdateUserPassDTO, self: boolean = false): Promise<SafeUser> {
     const user: User | null = await this.userRepository.findOneBy({ id });
     if(!user) 
       throw new NotFoundException('User not found!');
   
-    const oldPassword = updatePasswordDTO.oldPassword!;
-    const newPassword = updatePasswordDTO.newPassword!;
-    const verifyPass: boolean = await this.verifyPassword(user.id, oldPassword);
+    const { oldPassword, newPassword } = updatePasswordDTO;
+    const verifyPass: boolean = self ? true : await this.verifyPassword(user.id, oldPassword);
     if(!verifyPass)
       throw new UnauthorizedException('Old password is incorrect!');
 

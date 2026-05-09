@@ -6,9 +6,6 @@ export class UpdateUserDTO {
   email?: string;
 
   @IsOptional()
-  password?: string;
-
-  @IsOptional()
   name?: string;
 
   @IsOptional()
@@ -19,9 +16,9 @@ export class UpdateUserDTO {
 export class UpdateUserPassDTO {
   @IsNotEmpty()
   @IsString()
-  oldPassword?: string;
+  oldPassword!: string;
 
   @IsNotEmpty()
   @IsString()
-  newPassword?: string;
+  newPassword!: string;
 }
