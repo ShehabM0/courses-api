@@ -1,6 +1,6 @@
+import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { CoursePaginationDTO, CreateCourseDTO } from "./course.dto";
 import { CategoryService } from "src/categories/category.service";
-import { Injectable, NotFoundException } from "@nestjs/common";
 import { Category } from "src/categories/category.entity";
 import { Course, CourseStatus } from "./course.entity";
 import { UserService } from "src/users/user.service";
@@ -116,5 +116,22 @@ export class CourseService {
     })
 
     return instructorCourses;
+  }
+
+  async publish(id: string, instructorId: string): Promise<Course> {
+    const course: Course | null = await this.courseRepository.findOne({
+      where: { id },
+      relations: ['instructor']
+    });
+    if (!course)
+      throw new NotFoundException('Course not found!');
+
+    if(course.instructor.id !== instructorId)
+      throw new ForbiddenException('You do not own this course!');
+    
+    course.status = CourseStatus.PUBLISHED;
+    const publishedCourse: Course = await this.courseRepository.save(course);
+
+    return publishedCourse;
   }
 }

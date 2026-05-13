@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Post, Query, Request, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Request, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { CoursePaginationDTO, CreateCourseDTO } from './course.dto';
 import { multerOptions } from '../common/config/multer.config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { RolesGuard } from 'src/roles/roles.guard';
@@ -6,7 +7,6 @@ import { Roles } from 'src/roles/roles.decorator';
 import { UserRole } from 'src/users/user.entity';
 import { CourseService } from './course.service';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { CoursePaginationDTO, CreateCourseDTO } from './course.dto';
 
 @Controller('courses')
 export class CourseController {
@@ -43,5 +43,13 @@ export class CourseController {
   @Get(':id')
   find(@Param('id') id: string) {
     return this.courseService.find(id);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.INSTRUCTOR)
+  @Patch(':id/publish')
+  publish(@Param('id') id: string, @Request() req) {
+    const instructorId: string = req.user.uid;
+    return this.courseService.publish(id, instructorId);
   }
 }
