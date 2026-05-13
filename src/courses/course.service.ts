@@ -1,12 +1,12 @@
 import { CoursePaginationDTO, CreateCourseDTO } from "./course.dto";
 import { CategoryService } from "src/categories/category.service";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { Category } from "src/categories/category.entity";
 import { Course, CourseStatus } from "./course.entity";
 import { UserService } from "src/users/user.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Brackets, Repository } from "typeorm";
 import { User } from "src/users/user.entity";
-import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class CourseService {
@@ -93,5 +93,17 @@ export class CourseService {
         hasPrevious: page > 1,
       },
     }
+  }
+
+  async find(id: string): Promise<Course> {
+    const course: Course | null = await this.courseRepository.findOne({
+      where: { id },
+      relations: ['instructor', 'categories']
+    });
+
+    if (!course)
+      throw new NotFoundException('Course not found!');
+
+    return course;
   }
 }

@@ -30,4 +30,10 @@ export class CourseController {
   findAll(@Query() coursePaginationDTO: CoursePaginationDTO) {
     return this.courseService.findAll(coursePaginationDTO);
   }
+
+  @UseGuards(AuthGuard)
+  @Get(':id')
+  find(@Param('id') id: string) {
+    return this.courseService.find(id);
+  }
 }
