@@ -31,6 +31,14 @@ export class CourseController {
     return this.courseService.findAll(coursePaginationDTO);
   }
 
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.INSTRUCTOR)
+  @Get('my-courses')
+  getMyCourses(@Request() req) {
+    const instructorId: string = req.user.uid;
+    return this.courseService.findMine(instructorId);
+  }
+
   @UseGuards(AuthGuard)
   @Get(':id')
   find(@Param('id') id: string) {

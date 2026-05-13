@@ -106,4 +106,15 @@ export class CourseService {
 
     return course;
   }
+
+  async findMine(instructorId: string): Promise<Course[]> {
+    const instructorCourses = await this.courseRepository.find({
+      where: {
+        instructor: { id: instructorId }
+      },
+      relations: ['categories']
+    })
+
+    return instructorCourses;
+  }
 }
