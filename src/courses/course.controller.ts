@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Request, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { CoursePaginationDTO, CreateCourseDTO, UpdateCourseDTO } from './course.dto';
 import { multerOptions } from '../common/config/multer.config';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -57,6 +57,14 @@ export class CourseController {
   ) {
     const instructorId: string = req.user.uid;
     return this.courseService.update(id, instructorId, updateCourseDTO, file);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.INSTRUCTOR)
+  @Delete(':id')
+  delete(@Param('id') id: string, @Request() req) {
+    const instructorId: string = req.user.uid;
+    return this.courseService.delete(id, instructorId);
   }
 
   @UseGuards(AuthGuard, RolesGuard)

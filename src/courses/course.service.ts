@@ -7,6 +7,7 @@ import { UserService } from "src/users/user.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Brackets, Repository } from "typeorm";
 import { User } from "src/users/user.entity";
+import { DeleteResult } from "typeorm/browser";
 
 @Injectable()
 export class CourseService {
@@ -150,5 +151,15 @@ export class CourseService {
     Object.assign(course, updateCourseDTO);
 
     return this.courseRepository.save(course);
+  }
+
+  async delete(id: string, instructorId: string): Promise<{ deleted: boolean }> {
+    const course: Course = await this.findById(id);
+
+    if(course.instructor.id !== instructorId)
+      throw new ForbiddenException('You do not own this course!');
+
+    const del: DeleteResult = await this.courseRepository.delete(course.id);
+    return { deleted: del.affected === 1 };
   }
 }
