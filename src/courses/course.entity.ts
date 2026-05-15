@@ -25,7 +25,7 @@ export class Course {
   price!: number;
 
   @Column({ nullable: true })
-  thumbnail!: string;
+  thumbnail?: string;
 
   @Column({
     type: 'enum',

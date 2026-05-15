@@ -1,5 +1,5 @@
+import { CoursePaginationDTO, CreateCourseDTO, UpdateCourseDTO } from "./course.dto";
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { CoursePaginationDTO, CreateCourseDTO } from "./course.dto";
 import { CategoryService } from "src/categories/category.service";
 import { Category } from "src/categories/category.entity";
 import { Course, CourseStatus } from "./course.entity";
@@ -95,7 +95,7 @@ export class CourseService {
     }
   }
 
-  async find(id: string): Promise<Course> {
+  async findById(id: string): Promise<Course> {
     const course: Course | null = await this.courseRepository.findOne({
       where: { id },
       relations: ['instructor', 'categories']
@@ -119,12 +119,7 @@ export class CourseService {
   }
 
   async publish(id: string, instructorId: string): Promise<Course> {
-    const course: Course | null = await this.courseRepository.findOne({
-      where: { id },
-      relations: ['instructor']
-    });
-    if (!course)
-      throw new NotFoundException('Course not found!');
+    const course: Course = await this.findById(id);
 
     if(course.instructor.id !== instructorId)
       throw new ForbiddenException('You do not own this course!');
@@ -133,5 +128,27 @@ export class CourseService {
     const publishedCourse: Course = await this.courseRepository.save(course);
 
     return publishedCourse;
+  }
+
+  async update(
+    id: string,
+    instructorId: string,
+    updateCourseDTO: UpdateCourseDTO, 
+    file?: Express.Multer.File,
+  ): Promise<Course> {
+    const thumbnailPath: string | undefined = file ? `/uploads/${file.filename}` : undefined;
+    const course: Course = await this.findById(id);
+
+    if(course.instructor.id !== instructorId)
+      throw new ForbiddenException('You do not own this course!');
+    
+    if(updateCourseDTO.categoryIds) {
+      const categories: Category[] = await this.categoryService.findByIds(updateCourseDTO.categoryIds);
+      course.categories = categories;
+    }
+    updateCourseDTO.thumbnail = thumbnailPath;
+    Object.assign(course, updateCourseDTO);
+
+    return this.courseRepository.save(course);
   }
 }
