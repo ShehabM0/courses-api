@@ -6,8 +6,8 @@ import { Course, CourseStatus } from "./course.entity";
 import { UserService } from "src/users/user.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Brackets, Repository } from "typeorm";
-import { User } from "src/users/user.entity";
 import { DeleteResult } from "typeorm/browser";
+import { User } from "src/users/user.entity";
 
 @Injectable()
 export class CourseService {
@@ -109,7 +109,18 @@ export class CourseService {
   }
 
   async findMine(instructorId: string): Promise<Course[]> {
-    const instructorCourses = await this.courseRepository.find({
+    const instructorCourses: Course[] = await this.courseRepository.find({
+      where: {
+        instructor: { id: instructorId }
+      },
+      relations: ['categories']
+    })
+
+    return instructorCourses;
+  }
+
+  async findAllMine(instructorId: string): Promise<Course[]> {
+    const instructorCourses: Course[] = await this.courseRepository.find({
       where: {
         instructor: { id: instructorId }
       },
@@ -120,10 +131,7 @@ export class CourseService {
   }
 
   async publish(id: string, instructorId: string): Promise<Course> {
-    const course: Course = await this.findById(id);
-
-    if(course.instructor.id !== instructorId)
-      throw new ForbiddenException('You do not own this course!');
+    const course: Course = await this.getOwnedCourse(id, instructorId);
     
     course.status = CourseStatus.PUBLISHED;
     const publishedCourse: Course = await this.courseRepository.save(course);
@@ -138,10 +146,7 @@ export class CourseService {
     file?: Express.Multer.File,
   ): Promise<Course> {
     const thumbnailPath: string | undefined = file ? `/uploads/${file.filename}` : undefined;
-    const course: Course = await this.findById(id);
-
-    if(course.instructor.id !== instructorId)
-      throw new ForbiddenException('You do not own this course!');
+    const course: Course = await this.getOwnedCourse(id, instructorId);
     
     if(updateCourseDTO.categoryIds) {
       const categories: Category[] = await this.categoryService.findByIds(updateCourseDTO.categoryIds);
@@ -154,12 +159,20 @@ export class CourseService {
   }
 
   async delete(id: string, instructorId: string): Promise<{ deleted: boolean }> {
-    const course: Course = await this.findById(id);
-
-    if(course.instructor.id !== instructorId)
-      throw new ForbiddenException('You do not own this course!');
+    const course: Course = await this.getOwnedCourse(id, instructorId);
 
     const del: DeleteResult = await this.courseRepository.delete(course.id);
     return { deleted: del.affected === 1 };
+  }
+
+  // Helper
+
+  async getOwnedCourse(courseId: string, instructorId: string): Promise<Course> {
+    const course: Course = await this.findById(courseId);
+
+    if(course.instructor.id !== instructorId)
+      throw new ForbiddenException('You do not own this course!');
+    
+    return course;
   }
 }
