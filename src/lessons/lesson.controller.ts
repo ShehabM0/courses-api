@@ -21,4 +21,16 @@ export class LessonController {
     const instructorId: string = req.user.uid;
     return this.lessonService.create(courseId, instructorId, createLessonDTO);
   }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.INSTRUCTOR)
+  @Post('bulk/:courseId')
+  createMany(
+    @Param('courseId') courseId: string,
+    @Request() req,
+    @Body() createLessonDTO: CreateLessonDTO[]
+  ) {
+    const instructorId: string = req.user.uid;
+    return this.lessonService.createMany(courseId, instructorId, createLessonDTO);
+  }
 }

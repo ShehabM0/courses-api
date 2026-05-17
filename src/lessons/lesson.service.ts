@@ -38,4 +38,15 @@ export class LessonService {
       return await manager.save(newLesson);
     });
   }
+
+  async createMany(courseId: string, instructorId: string, createLessonDTO: CreateLessonDTO[]): Promise<Lesson[]> {
+    return await this.lessonRepository.manager.transaction(async manager => {
+      let lessons: Lesson[] = [];
+      for(const lessonDTO of createLessonDTO) {
+        const newLesson: Lesson = await this.create(courseId, instructorId, lessonDTO);
+        lessons.push(newLesson);
+      }
+      return lessons;
+    });
+  }
 }
