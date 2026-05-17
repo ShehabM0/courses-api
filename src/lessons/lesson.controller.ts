@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { LessonService } from './lesson.service';
@@ -6,13 +6,13 @@ import { UserRole } from 'src/users/user.entity';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { CreateLessonDTO } from './lesson.dto';
 
-@Controller('lessons')
+@Controller('courses/:courseId/lessons')
 export class LessonController {
   constructor(private lessonService: LessonService) {}
 
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.INSTRUCTOR)
-  @Post(':courseId')
+  @Post('')
   create(
     @Param('courseId') courseId: string,
     @Request() req,
@@ -24,7 +24,7 @@ export class LessonController {
 
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.INSTRUCTOR)
-  @Post('bulk/:courseId')
+  @Post('bulk')
   createMany(
     @Param('courseId') courseId: string,
     @Request() req,
@@ -32,5 +32,17 @@ export class LessonController {
   ) {
     const instructorId: string = req.user.uid;
     return this.lessonService.createMany(courseId, instructorId, createLessonDTO);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.INSTRUCTOR)
+  @Delete(':lessonId')
+  delete(
+    @Param('courseId') courseId: string,
+    @Param('lessonId') lessonId: string,
+    @Request() req,
+  ) {
+    const instructorId: string = req.user.uid;
+    return this.lessonService.delete(lessonId, courseId, instructorId);
   }
 }
