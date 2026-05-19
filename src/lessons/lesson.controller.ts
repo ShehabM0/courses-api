@@ -10,6 +10,24 @@ import { AuthGuard } from 'src/auth/auth.guard';
 export class LessonController {
   constructor(private lessonService: LessonService) {}
 
+  @UseGuards(AuthGuard)
+  @Get('')
+  findAll(
+    @Param('courseId') courseId: string,
+    @Request() req
+  ) {
+    const userId: string = req.user.uid;
+    const userRole: UserRole = req.user.role;
+    return this.lessonService.findAll(courseId, userId, userRole);
+  }
+
+  // TODO: Enroll
+  @UseGuards(AuthGuard)
+  @Get(':lessonId')
+  find(@Param('lessonId') lessonId: string) {
+    return this.lessonService.findById(lessonId);
+  }
+
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.INSTRUCTOR)
   @Post('')

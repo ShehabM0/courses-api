@@ -4,6 +4,7 @@ import { CreateLessonDTO, UpdateLessonDTO } from "./lesson.dto";
 import { CourseService } from "src/courses/course.service";
 import { Course } from "src/courses/course.entity";
 import { InjectRepository } from "@nestjs/typeorm";
+import { UserRole } from "src/users/user.entity";
 import { DeleteResult } from "typeorm/browser";
 import { Lesson } from "./lesson.entity";
 
@@ -14,6 +15,27 @@ export class LessonService {
     private readonly lessonRepository: Repository<Lesson>,
     private readonly courseService: CourseService,
   ) {}
+
+  async findAll(courseId: string, userId: string, userRole: UserRole): Promise<Lesson[]> {
+    let lessons: Lesson[];
+    if(userRole === UserRole.INSTRUCTOR) {
+      await this.courseService.getOwnedCourse(courseId, userId);
+      lessons = await this.lessonRepository.findBy({ course: { id: courseId }});
+    } else {
+      lessons = await this.lessonRepository.findBy({
+        course: { id: courseId },
+        isFree: false
+      });
+    }
+    return lessons;
+  }
+
+  async findById(lessonId: string): Promise<Lesson> {
+    const lesson: Lesson | null = await this.lessonRepository.findOneBy({ id: lessonId });
+    if(!lesson)
+      throw new NotFoundException('Lesson not found!');
+    return lesson;
+  }
 
   async create(courseId: string, instructorId: string, createLessonDTO: CreateLessonDTO): Promise<Lesson> {
     const course: Course = await this.courseService.getOwnedCourse(courseId, instructorId);
@@ -59,12 +81,7 @@ export class LessonService {
   ): Promise<Lesson> {
     await this.courseService.getOwnedCourse(courseId, instructorId);
 
-    const lesson: Lesson | null = await this.lessonRepository.findOneBy({
-      id: lessonId,
-      course: { id: courseId }
-    });
-    if(!lesson)
-      throw new NotFoundException('Lesson not found!');
+    const lesson: Lesson = await this.findById(lessonId);
 
     Object.assign(lesson, updateLessonDTO);
     return this.lessonRepository.save(lesson);
@@ -73,12 +90,7 @@ export class LessonService {
   async delete(lessonId: string, courseId: string, instructorId: string): Promise<{ deleted: boolean }> {
     await this.courseService.getOwnedCourse(courseId, instructorId);
 
-    const lesson: Lesson | null = await this.lessonRepository.findOneBy({
-      id: lessonId,
-      course: { id: courseId }
-    });
-    if(!lesson)
-      throw new NotFoundException('Lesson not found!');
+    const lesson: Lesson = await this.findById(lessonId);
 
     return await this.lessonRepository.manager.transaction(async manager => {
       const lessonsToShift: Lesson[] = await manager.find(Lesson, {
