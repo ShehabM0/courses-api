@@ -1,9 +1,9 @@
 import {  Injectable, NotFoundException } from "@nestjs/common";
 import { MoreThan, MoreThanOrEqual, Repository } from "typeorm";
+import { CreateLessonDTO, UpdateLessonDTO } from "./lesson.dto";
 import { CourseService } from "src/courses/course.service";
 import { Course } from "src/courses/course.entity";
 import { InjectRepository } from "@nestjs/typeorm";
-import { CreateLessonDTO } from "./lesson.dto";
 import { DeleteResult } from "typeorm/browser";
 import { Lesson } from "./lesson.entity";
 
@@ -49,6 +49,25 @@ export class LessonService {
       }
       return lessons;
     });
+  }
+
+  async update(
+    lessonId: string,
+    courseId: string,
+    instructorId: string,
+    updateLessonDTO: UpdateLessonDTO
+  ): Promise<Lesson> {
+    await this.courseService.getOwnedCourse(courseId, instructorId);
+
+    const lesson: Lesson | null = await this.lessonRepository.findOneBy({
+      id: lessonId,
+      course: { id: courseId }
+    });
+    if(!lesson)
+      throw new NotFoundException('Lesson not found!');
+
+    Object.assign(lesson, updateLessonDTO);
+    return this.lessonRepository.save(lesson);
   }
 
   async delete(lessonId: string, courseId: string, instructorId: string): Promise<{ deleted: boolean }> {

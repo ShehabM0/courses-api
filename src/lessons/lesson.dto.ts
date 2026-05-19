@@ -24,3 +24,31 @@ export class CreateLessonDTO {
   @IsBoolean()
   isFree!: boolean;
 }
+
+export class UpdateLessonDTO {
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  videoUrl?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  duration?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  order?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isFree?: boolean;
+}
