@@ -1,4 +1,5 @@
-import { IsBoolean, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateNested } from "class-validator";
+import { Type } from 'class-transformer';
 
 export class CreateLessonDTO {
   @IsString()
@@ -51,4 +52,19 @@ export class UpdateLessonDTO {
   @IsOptional()
   @IsBoolean()
   isFree?: boolean;
+}
+
+export class OrderLessonDTO {
+  @IsUUID('4')
+  id!: string;
+
+  @IsNumber()
+  @Min(1)
+  order!: number;
+}
+export class OrderLessonsDTO {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderLessonDTO)
+  lessons!: OrderLessonDTO[];
 }

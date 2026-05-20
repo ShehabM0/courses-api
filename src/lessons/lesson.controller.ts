@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
-import { CreateLessonDTO, UpdateLessonDTO } from './lesson.dto';
+import { CreateLessonDTO, OrderLessonsDTO, UpdateLessonDTO } from './lesson.dto';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { LessonService } from './lesson.service';
@@ -50,6 +50,18 @@ export class LessonController {
   ) {
     const instructorId: string = req.user.uid;
     return this.lessonService.createMany(courseId, instructorId, createLessonDTO);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.INSTRUCTOR)
+  @Patch('reorder')
+  reorder(
+    @Param('courseId') courseId: string,
+    @Request() req,
+    @Body() orderLessonsDTO: OrderLessonsDTO,
+  ) {
+    const instructorId: string = req.user.uid;
+    return this.lessonService.reorder(courseId, instructorId, orderLessonsDTO.lessons);
   }
 
   @UseGuards(AuthGuard, RolesGuard)

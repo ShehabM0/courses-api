@@ -1,6 +1,6 @@
-import {  Injectable, NotFoundException } from "@nestjs/common";
+import {  BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { CreateLessonDTO, OrderLessonDTO, UpdateLessonDTO } from "./lesson.dto";
 import { MoreThan, MoreThanOrEqual, Repository } from "typeorm";
-import { CreateLessonDTO, UpdateLessonDTO } from "./lesson.dto";
 import { CourseService } from "src/courses/course.service";
 import { Course } from "src/courses/course.entity";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -104,5 +104,27 @@ export class LessonService {
       const del: DeleteResult = await this.lessonRepository.delete(lesson.id);
       return { deleted: del.affected === 1 };
     })
+  }
+
+  async reorder(courseId: string, instructorId: string, orderLessonsDTO: OrderLessonDTO[]): Promise<Lesson[]> {
+    await this.courseService.getOwnedCourse(courseId, instructorId);
+
+    const courseLessonsCount: number =
+      await this.lessonRepository.countBy({course: { id: courseId }});
+    if(courseLessonsCount !== orderLessonsDTO.length)
+      throw new BadRequestException(
+        'The submitted lessons list is incomplete. All course lessons must be included.'
+      );
+
+    await this.lessonRepository.manager.transaction(async manager => {
+      for(const lesson of orderLessonsDTO)
+        await manager.update(Lesson, { id: lesson.id }, { order: lesson.order });
+    });
+
+    const lessons: Lesson[] = await this.lessonRepository.find({
+      where: { course: { id: courseId } },
+      order: { order: 'ASC' }
+    });
+    return lessons;
   }
 }
