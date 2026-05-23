@@ -1,4 +1,6 @@
+import { EnrollmentModule } from './enrollments/enrollments.module';
 import { CategoryModule } from './categories/category.module';
+import { Enrollment } from './enrollments/enrollment.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Category } from './categories/category.entity';
 import { CourseModule } from './courses/course.module';
@@ -25,12 +27,14 @@ import { Module } from '@nestjs/common';
         ssl: true,
         entities: [
           User, RevokedToken,
-          Course, Category, Lesson
+          Course, Category, Lesson,
+          Enrollment
         ],
         synchronize: config.get<string>('NODE_ENV') === 'DEV',
       }),
     }),
 
+    EnrollmentModule,
     CategoryModule,
     CourseModule,
     LessonModule,
