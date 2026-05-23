@@ -2,9 +2,11 @@ import { EnrollmentModule } from './enrollments/enrollments.module';
 import { CategoryModule } from './categories/category.module';
 import { Enrollment } from './enrollments/enrollment.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ProgressModule } from './progress/progress.module';
 import { Category } from './categories/category.entity';
 import { CourseModule } from './courses/course.module';
 import { LessonModule } from './lessons/lesson.module';
+import { Progress } from './progress/progress.entity';
 import { RevokedToken } from './token/token.entity';
 import { RedisModule } from './redis/redis.module';
 import { Lesson } from './lessons/lesson.entity';
@@ -28,13 +30,14 @@ import { Module } from '@nestjs/common';
         entities: [
           User, RevokedToken,
           Course, Category, Lesson,
-          Enrollment
+          Enrollment, Progress
         ],
         synchronize: config.get<string>('NODE_ENV') === 'DEV',
       }),
     }),
 
     EnrollmentModule,
+    ProgressModule,
     CategoryModule,
     CourseModule,
     LessonModule,

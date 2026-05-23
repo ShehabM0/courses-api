@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, Unique } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, Unique, OneToMany } from 'typeorm';
+import { Progress } from '../progress/progress.entity';
 import { Course } from '../courses/course.entity';
 import { User } from '../users/user.entity';
 
@@ -22,4 +23,7 @@ export class Enrollment {
 
   @ManyToOne(() => Course, { onDelete: 'CASCADE' })
   course!: Course;
+
+  @OneToMany(() => Progress, progress => progress.enrollment, { cascade: true })
+  progress!: Progress[];
 }
