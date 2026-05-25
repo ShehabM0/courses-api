@@ -1,4 +1,6 @@
 import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
+import { PagePaginatedResult } from "src/common/pagination/pagination.interface";
+import { PagePaginationDTO } from "src/common/pagination/pagination.dto";
 import { Course, CourseStatus } from "src/courses/course.entity";
 import { CourseService } from "src/courses/course.service";
 import { UserService } from "src/users/user.service";
@@ -37,6 +39,35 @@ export class EnrollmentService {
 
     const enrollment: Enrollment = this.enrollmentRepository.create({ course, user });
     return this.enrollmentRepository.save(enrollment);
+  }
+
+  async myEnrollments(userId: string, pagePaginationDTO: PagePaginationDTO): Promise<PagePaginatedResult<Enrollment>> {
+    const page = pagePaginationDTO.page ?? 1;
+    const pageSize = pagePaginationDTO.pageSize ?? 10;
+
+    const [enrollments, totalItems]: [Enrollment[], number] = await this.enrollmentRepository.findAndCount({
+      where: {
+        user: { id: userId },
+      },
+      relations: ['course', 'course.categories', 'progress'],
+      order: { enrolledAt: 'DESC' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    return {
+      data: enrollments,
+      pagination: {
+        page,
+        pageSize,
+        totalItems,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrevious: page > 1,
+      },
+    };
   }
 
   // Helper
