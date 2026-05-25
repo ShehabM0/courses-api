@@ -1,7 +1,7 @@
-import { ConflictException, Injectable } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
+import { Course, CourseStatus } from "src/courses/course.entity";
 import { CourseService } from "src/courses/course.service";
 import { UserService } from "src/users/user.service";
-import { Course } from "src/courses/course.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Enrollment } from "./enrollment.entity";
 import { User } from "src/users/user.entity";
@@ -16,8 +16,11 @@ export class EnrollmentService {
     private readonly userService: UserService,
   ) {}
 
-  async enroll(userId: string, courseId: string) {
+  async enroll(userId: string, courseId: string): Promise<Enrollment> {
     const course: Course = await this.courseService.findById(courseId);
+    if (course.status !== CourseStatus.PUBLISHED)
+      throw new BadRequestException('Course is not available yet!');
+
     const user: User = await this.userService.findById(userId);
 
     // double check @Unique(['user', 'course'])
@@ -34,5 +37,15 @@ export class EnrollmentService {
 
     const enrollment: Enrollment = this.enrollmentRepository.create({ course, user });
     return this.enrollmentRepository.save(enrollment);
+  }
+
+  // Helper
+
+  async isEnrolled(userId: string, courseId: string): Promise<Boolean> {
+    const enrolled: Enrollment | null = await this.enrollmentRepository.findOneBy({
+      course: { id: courseId },
+      user: { id: userId }
+    });
+    return enrolled != null;
   }
 }

@@ -30,8 +30,11 @@ export class LessonService {
     return lessons;
   }
 
-  async findById(lessonId: string): Promise<Lesson> {
-    const lesson: Lesson | null = await this.lessonRepository.findOneBy({ id: lessonId });
+  async findById(courseId: string, lessonId: string): Promise<Lesson> {
+    const lesson: Lesson | null = await this.lessonRepository.findOneBy({
+      id: lessonId,
+      course: { id: courseId }
+    });
     if(!lesson)
       throw new NotFoundException('Lesson not found!');
     return lesson;
@@ -81,7 +84,7 @@ export class LessonService {
   ): Promise<Lesson> {
     await this.courseService.getOwnedCourse(courseId, instructorId);
 
-    const lesson: Lesson = await this.findById(lessonId);
+    const lesson: Lesson = await this.findById(courseId, lessonId);
 
     Object.assign(lesson, updateLessonDTO);
     return this.lessonRepository.save(lesson);
@@ -90,7 +93,7 @@ export class LessonService {
   async delete(lessonId: string, courseId: string, instructorId: string): Promise<{ deleted: boolean }> {
     await this.courseService.getOwnedCourse(courseId, instructorId);
 
-    const lesson: Lesson = await this.findById(lessonId);
+    const lesson: Lesson = await this.findById(courseId, lessonId);
 
     return await this.lessonRepository.manager.transaction(async manager => {
       const lessonsToShift: Lesson[] = await manager.find(Lesson, {

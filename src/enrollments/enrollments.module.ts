@@ -5,6 +5,7 @@ import { TokenModule } from 'src/token/token.module';
 import { UserModule } from 'src/users/user.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { Enrollment } from './enrollment.entity';
+import { EnrollGuard } from './enrollment.guard';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Module } from '@nestjs/common';
 
@@ -16,8 +17,8 @@ import { Module } from '@nestjs/common';
     UserModule,
     AuthModule
   ],
-  providers: [EnrollmentService],
+  providers: [EnrollmentService, EnrollGuard],
+  exports: [EnrollmentService, EnrollGuard],
   controllers: [EnrollmentController],
-  exports: [EnrollmentService],
 })
 export class EnrollmentModule {}

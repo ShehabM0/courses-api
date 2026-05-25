@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
 import { CreateLessonDTO, OrderLessonsDTO, UpdateLessonDTO } from './lesson.dto';
+import { EnrollGuard } from 'src/enrollments/enrollment.guard';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { LessonService } from './lesson.service';
@@ -21,12 +22,13 @@ export class LessonController {
     return this.lessonService.findAll(courseId, userId, userRole);
   }
 
-  // TODO: Enroll
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, EnrollGuard)
   @Get(':lessonId')
-  find(@Param('lessonId') lessonId: string) {
-    return this.lessonService.findById(lessonId);
+  find(@Param('courseId') courseId: string, @Param('lessonId') lessonId: string) {
+    return this.lessonService.findById(courseId, lessonId);
   }
+
+  // Instructor only.
 
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.INSTRUCTOR)
