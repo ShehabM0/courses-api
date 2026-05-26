@@ -1,5 +1,6 @@
 import { Controller, Get, Param, Post, Query, Request, UseGuards } from "@nestjs/common";
 import { PagePaginationDTO } from "src/common/pagination/pagination.dto";
+import { EnrollmentPaginationDTO } from "./enrollments.dto";
 import { EnrollmentService } from "./enrollment.service";
 import { RolesGuard } from "src/roles/roles.guard";
 import { Roles } from "src/roles/roles.decorator";
@@ -24,5 +25,17 @@ export class EnrollmentController {
   getMyEnrollments(@Request() req, @Query() pagePaginationDTO: PagePaginationDTO) {
     const userId: string = req.user.uid;
     return this.enrollmentService.myEnrollments(userId, pagePaginationDTO);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.INSTRUCTOR)
+  @Get(':courseId/students')
+  getCourseStudents(
+    @Request() req,
+    @Param('courseId') coruseId: string,
+    @Query() enrollmentPaginationDTO: EnrollmentPaginationDTO
+  ) {
+    const instructorId: string = req.user.uid;
+    return this.enrollmentService.courseStudents(instructorId, coruseId, enrollmentPaginationDTO);
   }
 }

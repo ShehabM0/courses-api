@@ -2,12 +2,13 @@ import { BadRequestException, ConflictException, Injectable } from "@nestjs/comm
 import { PagePaginatedResult } from "src/common/pagination/pagination.interface";
 import { PagePaginationDTO } from "src/common/pagination/pagination.dto";
 import { Course, CourseStatus } from "src/courses/course.entity";
+import { EnrollmentPaginationDTO } from "./enrollments.dto";
 import { CourseService } from "src/courses/course.service";
 import { UserService } from "src/users/user.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Enrollment } from "./enrollment.entity";
+import { Brackets, Repository } from "typeorm";
 import { User } from "src/users/user.entity";
-import { Repository } from "typeorm";
 
 @Injectable()
 export class EnrollmentService {
@@ -57,6 +58,53 @@ export class EnrollmentService {
 
     const totalPages = Math.ceil(totalItems / pageSize);
 
+    return {
+      data: enrollments,
+      pagination: {
+        page,
+        pageSize,
+        totalItems,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrevious: page > 1,
+      },
+    };
+  }
+
+  async courseStudents(instructorId: string, courseId: string, enrollmentPaginationDTO: EnrollmentPaginationDTO): Promise<PagePaginatedResult<Enrollment>> {
+    await this.courseService.getOwnedCourse(courseId, instructorId);
+
+    const page = enrollmentPaginationDTO.page ?? 1;
+    const pageSize = enrollmentPaginationDTO.pageSize ?? 10;
+    const query = enrollmentPaginationDTO.query?.trim().toLowerCase() ?? '';
+    const courseCompleted = enrollmentPaginationDTO.courseCompleted;
+
+    const q = this.enrollmentRepository
+      .createQueryBuilder('enrollment')
+      .leftJoinAndSelect('enrollment.user', 'user')
+      .leftJoin('enrollment.course', 'course')
+      .where('course.id = :courseId', { courseId });
+
+    if(query) {
+      q.andWhere(
+        new Brackets((qb) => {
+          qb.where('user.name ILIKE :query', { query: `%${query}%` })
+           .orWhere('user.email ILIKE :query', { query: `%${query}%` })
+        }),
+      );
+    }
+    if (courseCompleted !== undefined) {
+      q.andWhere('enrollment.isCompleted = :courseCompleted', { courseCompleted });
+    }
+
+    const [enrollments, totalItems] = await q
+      .orderBy('enrollment.enrolledAt', 'DESC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
+
+    const totalPages = Math.ceil(totalItems / pageSize);
+    
     return {
       data: enrollments,
       pagination: {
