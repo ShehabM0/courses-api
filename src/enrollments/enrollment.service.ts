@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, Injectable } from "@nestjs/common";
 import { PagePaginatedResult } from "src/common/pagination/pagination.interface";
 import { PagePaginationDTO } from "src/common/pagination/pagination.dto";
 import { Course, CourseStatus } from "src/courses/course.entity";
@@ -129,7 +129,7 @@ export class EnrollmentService {
       relations: ['user', 'course', 'course.categories', 'progress'],
     });
     if(!enrollment)
-      throw new ConflictException('User not enrolled to this course!');
+      throw new ForbiddenException('User not enrolled to this course!');
     return enrollment;
   }
 

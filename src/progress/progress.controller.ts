@@ -1,4 +1,4 @@
-import { Controller, Param, Post, Request, UseGuards } from "@nestjs/common";
+import { Controller, Get, Param, Post, Request, UseGuards } from "@nestjs/common";
 import { ProgressService } from "./progress.service";
 import { RolesGuard } from "src/roles/roles.guard";
 import { Roles } from "src/roles/roles.decorator";
@@ -19,5 +19,13 @@ export class ProgressController {
   ) {
     const userId: string = req.user.uid;
     return this.progressService.markLessonComplete(userId, courseId, lessonId);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.STUDENT)
+  @Get('progress')
+  getProgress(@Param('courseId') courseId: string, @Request() req) {
+    const userId: string = req.user.uid;
+    return this.progressService.getProgress(userId, courseId);
   }
 }

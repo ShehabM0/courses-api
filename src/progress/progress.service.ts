@@ -1,9 +1,9 @@
 import { EnrollmentService } from "src/enrollments/enrollment.service";
 import { Enrollment } from "src/enrollments/enrollment.entity";
+import { CourseProgressResponse } from "./progress.interface";
 import { LessonService } from "src/lessons/lesson.service";
 import { Lesson } from "src/lessons/lesson.entity";
 import { InjectRepository } from "@nestjs/typeorm";
-import { UserRole } from "src/users/user.entity";
 import { Progress } from "./progress.entity";
 import { Injectable } from "@nestjs/common";
 import { Repository } from "typeorm";
@@ -57,9 +57,37 @@ export class ProgressService {
         enrollment: { id: enrollment.id },
         isCompleted: true
       }
-    })
+    });
 
     if(completedLessons == totalLessons)
       await this.enrollmentService.makeCourseCompelete(enrollment);
+  }
+
+  async getProgress(userId: string, courseId: string): Promise<CourseProgressResponse> {
+    const enrollment: Enrollment = await this.enrollmentService.findById(userId, courseId);
+    const totalLessons: number = await this.lessonService.count(enrollment.course.id);
+    const completedLessons: number = await this.progressRepository.count({
+      where: { 
+        enrollment: { id: enrollment.id },
+        isCompleted: true
+      }
+    });
+
+    const percentage =
+      totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+    
+    return {
+      progress: {
+        totalLessons,
+        completedLessons,
+        percentage,
+        progress: enrollment.progress
+      },
+
+      completion: {
+        isCompleted: enrollment.isCompleted,
+        completedAt: enrollment.completedAt
+      }
+    };
   }
 }
