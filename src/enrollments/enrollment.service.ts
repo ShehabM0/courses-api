@@ -120,11 +120,30 @@ export class EnrollmentService {
 
   // Helper
 
+  async findById(userId: string, courseId: string): Promise<Enrollment> {
+    const enrollment: Enrollment | null = await this.enrollmentRepository.findOne({
+      where: {
+        course: { id: courseId },
+        user: { id: userId },
+      },
+      relations: ['user', 'course', 'course.categories', 'progress'],
+    });
+    if(!enrollment)
+      throw new ConflictException('User not enrolled to this course!');
+    return enrollment;
+  }
+
   async isEnrolled(userId: string, courseId: string): Promise<Boolean> {
     const enrolled: Enrollment | null = await this.enrollmentRepository.findOneBy({
       course: { id: courseId },
       user: { id: userId }
     });
     return enrolled != null;
+  }
+
+  async makeCourseCompelete(enrollment: Enrollment): Promise<void> {
+    enrollment.isCompleted = true;
+    enrollment.completedAt = new Date();
+    await this.enrollmentRepository.save(enrollment);
   }
 }

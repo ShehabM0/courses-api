@@ -130,4 +130,14 @@ export class LessonService {
     });
     return lessons;
   }
+
+  // Helper
+
+  async count(courseId: string): Promise<number> {
+    return await this.lessonRepository.count({
+      where: {
+        course: { id: courseId }
+      }
+    });
+  }
 }

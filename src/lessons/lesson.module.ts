@@ -20,5 +20,6 @@ import { Module } from '@nestjs/common';
   ],
   providers: [LessonService],
   controllers: [LessonController],
+  exports: [LessonService]
 })
 export class LessonModule {}
