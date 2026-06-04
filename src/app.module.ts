@@ -16,6 +16,8 @@ import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './users/user.entity';
 import { Module } from '@nestjs/common';
+import { ReviewModule } from './reviews/review.module';
+import { Review } from './reviews/review.entity';
 
 @Module({
   imports: [
@@ -30,7 +32,7 @@ import { Module } from '@nestjs/common';
         entities: [
           User, RevokedToken,
           Course, Category, Lesson,
-          Enrollment, Progress
+          Enrollment, Progress, Review
         ],
         synchronize: config.get<string>('NODE_ENV') === 'DEV',
       }),
@@ -40,6 +42,7 @@ import { Module } from '@nestjs/common';
     ProgressModule,
     CategoryModule,
     CourseModule,
+    ReviewModule,
     LessonModule,
     RedisModule,
     UserModule,
