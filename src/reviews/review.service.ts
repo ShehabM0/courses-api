@@ -29,7 +29,23 @@ export class ReviewService {
     const course: Course = await this.courseService.findById(courseId);
     const user: User = await this.userService.findById(userId);
     review = this.reviewRepository.create({ ...createReviewDTO, user, course});
+    await this.reviewRepository.save(review);
 
-    return this.reviewRepository.save(review);
+    await this.updateCourseRating(courseId);
+
+    return review;
+  }
+
+  // Helper
+
+  async updateCourseRating(courseId: string): Promise<void> {
+    const reviewsSum: number = await this.reviewRepository.sum(
+      'rating',
+      { course: { id: courseId } }
+    ) ?? 0;
+    const totalReviews: number = await this.reviewRepository.countBy({ course: { id: courseId }});
+
+    const averageRating = totalReviews > 0 ? reviewsSum / totalReviews : 0;
+    await this.courseService.updateRating(courseId, totalReviews, averageRating);
   }
 }

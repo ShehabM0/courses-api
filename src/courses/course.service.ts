@@ -175,4 +175,8 @@ export class CourseService {
     
     return course;
   }
+
+  async updateRating(id: string, totalReviews: number, averageRating: number): Promise<void> {
+    await this.courseRepository.update(id, { totalReviews, averageRating });
+  }
 }

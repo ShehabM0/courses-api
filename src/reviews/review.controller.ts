@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post, Request, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Request, UseGuards } from "@nestjs/common";
 import { EnrollGuard } from "src/enrollments/enrollment.guard";
 import { RolesGuard } from "src/roles/roles.guard";
 import { Roles } from "src/roles/roles.decorator";
@@ -16,7 +16,7 @@ export class ReviewController {
   @Post('')
   create(
     @Request() req,
-    @Param('coruseId') courseId: string,
+    @Param('courseId') courseId: string,
     @Body() createReviewDTO: CreateReviewDTO
   ) {
     const userId: string = req.user.uid;
