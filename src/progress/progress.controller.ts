@@ -5,7 +5,7 @@ import { Roles } from "src/roles/roles.decorator";
 import { UserRole } from "src/users/user.entity";
 import { AuthGuard } from "src/auth/auth.guard";
 
-@Controller('progress/:courseId')
+@Controller('courses/:courseId/progress')
 export class ProgressController {
   constructor(private progressService: ProgressService) {}
 
@@ -23,7 +23,7 @@ export class ProgressController {
 
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.STUDENT)
-  @Get('progress')
+  @Get('')
   getProgress(@Param('courseId') courseId: string, @Request() req) {
     const userId: string = req.user.uid;
     return this.progressService.getProgress(userId, courseId);
