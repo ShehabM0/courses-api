@@ -1,3 +1,5 @@
+import { PagePaginatedResult } from "src/common/pagination/pagination.interface";
+import { PagePaginationDTO } from "src/common/pagination/pagination.dto";
 import { ConflictException, Injectable } from "@nestjs/common";
 import { CourseService } from "src/courses/course.service";
 import { UserService } from "src/users/user.service";
@@ -34,6 +36,38 @@ export class ReviewService {
     await this.updateCourseRating(courseId);
 
     return review;
+  }
+
+  async findAll(courseId: string, pagePaginationDTO: PagePaginationDTO): Promise<PagePaginatedResult<Review>> {
+    const page = pagePaginationDTO.page ?? 1;
+    const pageSize = pagePaginationDTO.pageSize ?? 10;
+
+    const query = this.reviewRepository
+      .createQueryBuilder('review')
+      .leftJoinAndSelect('review.user', 'user')
+      .select('review')
+      .addSelect(['user.id', 'user.name'])
+      .where('review.courseId = :courseId', { courseId });
+    
+    const [reviews, totalItems] = await query
+      .orderBy('review.createdAt', 'DESC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
+
+    const totalPages = Math.ceil(totalItems / pageSize);
+      
+    return {
+      data: reviews,
+      pagination: {
+        page,
+        pageSize,
+        totalItems,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrevious: page > 1,
+      },
+    }
   }
 
   // Helper

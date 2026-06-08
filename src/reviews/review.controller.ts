@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Post, Request, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Query, Request, UseGuards } from "@nestjs/common";
+import { PagePaginationDTO } from "src/common/pagination/pagination.dto";
 import { EnrollGuard } from "src/enrollments/enrollment.guard";
 import { RolesGuard } from "src/roles/roles.guard";
 import { Roles } from "src/roles/roles.decorator";
@@ -21,5 +22,10 @@ export class ReviewController {
   ) {
     const userId: string = req.user.uid;
     return this.reviewService.create(courseId, userId,createReviewDTO);
+  }
+
+  @Get('')
+  get(@Param('courseId') courseId: string, @Query() pagePaginationDTO: PagePaginationDTO) {
+    return this.reviewService.findAll(courseId, pagePaginationDTO);
   }
 }
