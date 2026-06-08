@@ -39,13 +39,16 @@ export class ReviewService {
   // Helper
 
   async updateCourseRating(courseId: string): Promise<void> {
-    const reviewsSum: number = await this.reviewRepository.sum(
-      'rating',
-      { course: { id: courseId } }
-    ) ?? 0;
-    const totalReviews: number = await this.reviewRepository.countBy({ course: { id: courseId }});
+    const { avg, count } = await this.reviewRepository
+      .createQueryBuilder('review')
+      .select('AVG(review.rating)', 'avg')
+      .addSelect('COUNT(review.id)', 'count')
+      .where('review.courseId = :courseId', { courseId })
+      .getRawOne();
+    
+    const totalReviews: number = parseInt(count, 10);
+    const averageRating: number = totalReviews > 0 ? parseFloat(avg ?? '0') : 0;
 
-    const averageRating = totalReviews > 0 ? reviewsSum / totalReviews : 0;
     await this.courseService.updateRating(courseId, totalReviews, averageRating);
   }
 }

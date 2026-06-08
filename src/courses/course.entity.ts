@@ -34,7 +34,7 @@ export class Course {
   })
   status!: CourseStatus;
 
-  @Column({ type: 'decimal', precision: 3, scale: 2, default: 0 })
+  @Column({ type: 'decimal', precision: 3, scale: 1, default: 0 })
   averageRating!: number;
 
   @Column({ default: 0 })
