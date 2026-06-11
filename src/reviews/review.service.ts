@@ -1,11 +1,11 @@
 import { PagePaginatedResult } from "src/common/pagination/pagination.interface";
 import { PagePaginationDTO } from "src/common/pagination/pagination.dto";
-import { ConflictException, Injectable } from "@nestjs/common";
+import { CreateReviewDTO, UpdateReviewDTO } from "./review.dto";
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { CourseService } from "src/courses/course.service";
 import { UserService } from "src/users/user.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Course } from "src/courses/course.entity";
-import { CreateReviewDTO } from "./review.dto";
 import { User } from "src/users/user.entity";
 import { Review } from "./review.entity";
 import { Repository } from "typeorm";
@@ -31,6 +31,27 @@ export class ReviewService {
     const course: Course = await this.courseService.findById(courseId);
     const user: User = await this.userService.findById(userId);
     review = this.reviewRepository.create({ ...createReviewDTO, user, course});
+    await this.reviewRepository.save(review);
+
+    await this.updateCourseRating(courseId);
+
+    return review;
+  }
+
+  async update(id: string, courseId: string, userId: string, updateReviewDTO: UpdateReviewDTO): Promise<Review> {
+    const review: Review | null = await this.reviewRepository.findOne({
+      where: { id, course: { id: courseId } },
+      relations: ['user']
+    });
+    if(!review)
+      throw new NotFoundException('Review not found!');
+
+    console.log(review);
+
+    if(review.user.id != userId)
+      throw new ForbiddenException('You can only edit your own review!');
+
+    Object.assign(review, updateReviewDTO);
     await this.reviewRepository.save(review);
 
     await this.updateCourseRating(courseId);
