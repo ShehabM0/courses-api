@@ -1,12 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Request, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request, UseGuards } from "@nestjs/common";
 import { PagePaginationDTO } from "src/common/pagination/pagination.dto";
+import { CreateReviewDTO, UpdateReviewDTO } from "./review.dto";
 import { EnrollGuard } from "src/enrollments/enrollment.guard";
 import { RolesGuard } from "src/roles/roles.guard";
 import { Roles } from "src/roles/roles.decorator";
 import { ReviewService } from "./review.service";
 import { UserRole } from "src/users/user.entity";
 import { AuthGuard } from "src/auth/auth.guard";
-import { CreateReviewDTO, UpdateReviewDTO } from "./review.dto";
 
 @Controller('courses/:courseId/reviews')
 export class ReviewController {
@@ -35,6 +35,18 @@ export class ReviewController {
   ) {
     const userId: string = req.user.uid;
     return this.reviewService.update(reviewId, courseId, userId, updateReviewDTO);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard, EnrollGuard)
+  @Roles(UserRole.STUDENT)
+  @Delete(':reviewId')
+  delete(
+    @Request() req,
+    @Param('courseId') courseId: string,
+    @Param('reviewId') reviewId: string,
+  ) {
+    const userId: string = req.user.uid;
+    return this.reviewService.delete(reviewId, courseId, userId);
   }
 
   @Get('')

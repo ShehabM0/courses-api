@@ -1,11 +1,12 @@
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { PagePaginatedResult } from "src/common/pagination/pagination.interface";
 import { PagePaginationDTO } from "src/common/pagination/pagination.dto";
 import { CreateReviewDTO, UpdateReviewDTO } from "./review.dto";
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { CourseService } from "src/courses/course.service";
 import { UserService } from "src/users/user.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Course } from "src/courses/course.entity";
+import { DeleteResult } from "typeorm/browser";
 import { User } from "src/users/user.entity";
 import { Review } from "./review.entity";
 import { Repository } from "typeorm";
@@ -39,24 +40,30 @@ export class ReviewService {
   }
 
   async update(id: string, courseId: string, userId: string, updateReviewDTO: UpdateReviewDTO): Promise<Review> {
-    const review: Review | null = await this.reviewRepository.findOne({
-      where: { id, course: { id: courseId } },
-      relations: ['user']
-    });
-    if(!review)
-      throw new NotFoundException('Review not found!');
-
-    console.log(review);
-
+    const review: Review = await this.find(id, courseId);
     if(review.user.id != userId)
       throw new ForbiddenException('You can only edit your own review!');
 
     Object.assign(review, updateReviewDTO);
     await this.reviewRepository.save(review);
 
-    await this.updateCourseRating(courseId);
+    if(updateReviewDTO.rating)
+      await this.updateCourseRating(courseId);
 
     return review;
+  }
+
+  async delete(id: string, courseId: string, userId: string): Promise<{ deleted: boolean }> {
+    const review: Review = await this.find(id, courseId);
+    if(review.user.id != userId)
+      throw new ForbiddenException('You can only edit your own review!');
+    
+    const del: DeleteResult = await this.reviewRepository.delete(review.id);
+
+    if(del.affected === 1)
+      await this.updateCourseRating(courseId);
+    
+    return { deleted: del.affected === 1 };
   }
 
   async findAll(courseId: string, pagePaginationDTO: PagePaginationDTO): Promise<PagePaginatedResult<Review>> {
@@ -92,6 +99,16 @@ export class ReviewService {
   }
 
   // Helper
+
+  async find(id: string, courseId: string): Promise<Review> {
+    const review: Review | null = await this.reviewRepository.findOne({
+      where: { id, course: { id: courseId } },
+      relations: ['user']
+    });
+    if(!review)
+      throw new NotFoundException('Review not found!');
+    return review;
+  }
 
   async updateCourseRating(courseId: string): Promise<void> {
     const { avg, count } = await this.reviewRepository
