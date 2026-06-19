@@ -34,10 +34,6 @@ export class EnrollmentService {
     if(enrolled)
       throw new ConflictException("User already enrolled to this course!");
 
-    if(Number(course.price) !== 0) {
-      // TODO: Payment.
-    }
-
     const enrollment: Enrollment = this.enrollmentRepository.create({ course, user });
     return this.enrollmentRepository.save(enrollment);
   }

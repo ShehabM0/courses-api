@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
 
-type StripeWebhookEvent = ReturnType<StripeClient['webhooks']['constructEvent']>;
+export type StripeWebhookEvent = ReturnType<StripeClient['webhooks']['constructEvent']>;
 
 @Injectable()
 export class StripeService {
@@ -48,10 +48,7 @@ export class StripeService {
 
   // Verify webhook signature and return the event
   // this request genuinely came from Stripe and wasn't tampered with as the endpoint is public
-  constructWebhookEvent(
-    payload: Buffer,
-    signature: string,
-  ): StripeWebhookEvent {
+  constructWebhookEvent(payload: Buffer, signature: string): StripeWebhookEvent {
     return this.stripe.webhooks.constructEvent(
       payload,
       signature,

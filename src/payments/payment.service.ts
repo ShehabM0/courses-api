@@ -1,13 +1,15 @@
-import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { EnrollmentService } from "src/enrollments/enrollment.service";
 import { Session } from "node_modules/stripe/cjs/resources/Checkout";
 import { Course, CourseStatus } from "src/courses/course.entity";
 import { CourseService } from "src/courses/course.service";
+import type { StripeWebhookEvent } from "./stripe.service";
 import { Payment, PaymentStatus } from "./payment.entity";
 import { UserService } from "src/users/user.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { StripeService } from "./stripe.service";
 import { User } from "src/users/user.entity";
+import type { Checkout } from 'stripe';
 import { Repository } from "typeorm";
 
 @Injectable()
@@ -55,6 +57,17 @@ export class PaymentService {
         status: PaymentStatus.PENDING
       }
     });
+    /*
+      [x] Unhandled case [x]
+      User clicks Buy
+      Payment record created (PENDING)
+      Stripe Checkout Session created
+      User closes tab
+      User comes back tomorrow
+      Clicks Buy again
+      Existing PENDING payment found
+      "Payment already in progress!"
+    */
     if (pendingPayment)
       throw new ConflictException('Payment already in progress!');
 
@@ -80,5 +93,47 @@ export class PaymentService {
       message: 'Checkout session created successfully.',
       sessionUrl: session.url,
     };
+  }
+
+  async handleWebhook(payload: Buffer, signature: string): Promise<void> {
+    let event: StripeWebhookEvent
+    try {
+      event = this.stripeService.constructWebhookEvent(payload, signature);
+    } catch {
+      throw new BadRequestException('Invalid webhook signature!');
+    }
+
+    const eventType: string = event.type;
+    if(eventType === 'checkout.session.completed') {
+      await this.handlePaymentSuccess(event.data.object as Checkout.Session);
+    }
+    else if(eventType === 'checkout.session.expired') {
+      await this.handlePaymentFailed(event.data.object as Checkout.Session);
+    }
+  }
+
+  // Helper
+
+  private async handlePaymentSuccess(session: Checkout.Session): Promise<void> {
+    if (!session.metadata)
+      throw new NotFoundException('Session metadata is missing!');
+    const { courseId, userId } = session.metadata;
+
+    await this.paymentRepository.update(
+      { stripeSessionId: session.id },
+      {
+        status: PaymentStatus.COMPLETED,
+        stripePaymentId: session.payment_intent as string,
+      }
+    );
+
+    await this.enrollmentService.enroll(userId, courseId);
+  }
+
+  private async handlePaymentFailed(session: Checkout.Session): Promise<void> {
+    await this.paymentRepository.update(
+      { stripeSessionId: session.id },
+      { status: PaymentStatus.FAILED },
+    );
   }
 }
