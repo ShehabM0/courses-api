@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, Unique } from 'typeorm';
 import { Course } from '../courses/course.entity';
 import { User } from '../users/user.entity';
 
@@ -10,6 +10,7 @@ export enum PaymentStatus {
 }
 
 @Entity('payments')
+@Unique(['user', 'course', 'status'])
 export class Payment {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
