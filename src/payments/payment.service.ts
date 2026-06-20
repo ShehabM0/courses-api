@@ -45,7 +45,7 @@ export class PaymentService {
 
     /*
       Prevent duplicate processing [v]
-      Race condition [x]
+      Race condition [x] ---database level protection--> [v]
       CREATE UNIQUE INDEX unique_pending_payment
       ON payments(user_id, course_id)
       WHERE status = 'PENDING';
@@ -57,41 +57,44 @@ export class PaymentService {
         status: PaymentStatus.PENDING
       }
     });
-    /*
-      [x] Unhandled case [x]
-      User clicks Buy
-      Payment record created (PENDING)
-      Stripe Checkout Session created
-      User closes tab
-      User comes back tomorrow
-      Clicks Buy again
-      Existing PENDING payment found
-      "Payment already in progress!"
-    */
-    if (pendingPayment)
-      throw new ConflictException('Payment already in progress!');
+    if (pendingPayment) {
+      const session: Session = await this.stripeService.stripe.checkout.sessions.retrieve(
+        pendingPayment.stripeSessionId!
+      );
+
+      if (session.status !== 'expired') {
+        return {
+          message: 'Payment already in progress!',
+          sessionUrl: session.url
+        };
+      }
+      await this.paymentRepository.update(
+        { id: pendingPayment.id },
+        { status: PaymentStatus.EXPIRED }
+      );
+    }
 
     const session: Session = await this.stripeService.createCheckoutSession({
       courseId,
       userId,
       courseTitle: course.title,
       amount: course.price,
-      currency: 'usd',
+      currency: 'usd'
     });
-    
-    const payment = this.paymentRepository.create({
+
+    const payment: Payment = this.paymentRepository.create({
       user,
       course,
       amount: course.price,
       currency: 'usd',
       status: PaymentStatus.PENDING,
-      stripeSessionId: session.id,
+      stripeSessionId: session.id
     });
     await this.paymentRepository.save(payment);
 
     return {
       message: 'Checkout session created successfully.',
-      sessionUrl: session.url,
+      sessionUrl: session.url
     };
   }
 
@@ -123,7 +126,7 @@ export class PaymentService {
       { stripeSessionId: session.id },
       {
         status: PaymentStatus.COMPLETED,
-        stripePaymentId: session.payment_intent as string,
+        stripePaymentId: session.payment_intent as string
       }
     );
 
@@ -133,7 +136,7 @@ export class PaymentService {
   private async handlePaymentFailed(session: Checkout.Session): Promise<void> {
     await this.paymentRepository.update(
       { stripeSessionId: session.id },
-      { status: PaymentStatus.FAILED },
+      { status: PaymentStatus.FAILED }
     );
   }
 }

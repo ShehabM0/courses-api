@@ -7,7 +7,7 @@ export type StripeWebhookEvent = ReturnType<StripeClient['webhooks']['constructE
 
 @Injectable()
 export class StripeService {
-  private stripe: StripeClient;
+  public stripe: StripeClient;
 
   constructor(private configService: ConfigService) {
     this.stripe = new Stripe(this.configService.getOrThrow<string>('STRIPE_SECRET_KEY'));
