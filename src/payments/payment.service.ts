@@ -1,16 +1,18 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { PagePaginatedResult } from "src/common/pagination/pagination.interface";
 import { EnrollmentService } from "src/enrollments/enrollment.service";
 import { Session } from "node_modules/stripe/cjs/resources/Checkout";
 import { Course, CourseStatus } from "src/courses/course.entity";
 import { CourseService } from "src/courses/course.service";
 import type { StripeWebhookEvent } from "./stripe.service";
 import { Payment, PaymentStatus } from "./payment.entity";
+import { User, UserRole } from "src/users/user.entity";
+import { PaymentPaginationDTO } from "./payments.dto";
 import { UserService } from "src/users/user.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { StripeService } from "./stripe.service";
-import { User } from "src/users/user.entity";
+import { Brackets, Repository } from "typeorm";
 import type { Checkout } from 'stripe';
-import { Repository } from "typeorm";
 
 @Injectable()
 export class PaymentService {
@@ -113,6 +115,54 @@ export class PaymentService {
     else if(eventType === 'checkout.session.expired') {
       await this.handlePaymentFailed(event.data.object as Checkout.Session);
     }
+  }
+
+  async find(userId: string, userRole: UserRole, paymentPaginationDTO: PaymentPaginationDTO)
+  :Promise<PagePaginatedResult<Payment>> {
+    const page = paymentPaginationDTO.page ?? 1;
+    const pageSize = paymentPaginationDTO.pageSize ?? 10;
+    const status = paymentPaginationDTO.status as PaymentStatus | undefined;
+    const query = paymentPaginationDTO.query?.trim();
+
+    const qb = this.paymentRepository
+    .createQueryBuilder('payment')
+    .leftJoinAndSelect('payment.course', 'course')
+    .leftJoinAndSelect('payment.user', 'user');
+
+    if(userRole == UserRole.STUDENT) {
+      qb.where('user.id = :userId', { userId });
+    } else if(query) {
+      qb.where(
+        new Brackets((qb) => {
+          qb.where('user.email ILIKE :search', { search: `%${query}%` })
+            .orWhere('user.name ILIKE :search', { search: `%${query}%` });
+        })
+      );
+    }
+
+    if (status) {
+      qb.andWhere('payment.status = :status', { status });
+    }
+
+    const [payments, totalItems] : [Payment[], number] = await qb
+      .orderBy('payment.createdAt', 'DESC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
+
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    return {
+      data: payments,
+      pagination: {
+        page,
+        pageSize,
+        totalItems,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrevious: page > 1,
+      },
+    };
   }
 
   // Helper

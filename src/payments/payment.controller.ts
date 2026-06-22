@@ -1,4 +1,5 @@
-import { BadRequestException, Controller, Headers, Param, Post, type RawBodyRequest, Request, UseGuards } from "@nestjs/common";
+import { BadRequestException, Controller, Get, Headers, Param, Post, Query, type RawBodyRequest, Request, UseGuards } from "@nestjs/common";
+import { PaymentPaginationDTO } from "./payments.dto";
 import { RolesGuard } from "src/roles/roles.guard";
 import { PaymentService } from "./payment.service";
 import { Roles } from "src/roles/roles.decorator";
@@ -29,5 +30,14 @@ export class PaymentController {
     if (!req.rawBody)
       throw new BadRequestException('Raw body is missing');
     return this.paymentService.handleWebhook(req.rawBody, signature);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.STUDENT, UserRole.ADMIN)
+  @Get('')
+  myPayments(@Request() req, @Query() paymnetPaginationDTO: PaymentPaginationDTO) {
+    const userId: string = req.user.uid;
+    const userRole: UserRole = req.user.role;
+    return this.paymentService.find(userId, userRole, paymnetPaginationDTO);
   }
 }
